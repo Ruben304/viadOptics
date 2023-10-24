@@ -14,7 +14,7 @@ Our device harnesses the capabilities of LIDAR sensors and advanced machine lear
 ![ArchitectureDiagram](images/ArchitectureDiagramV1E1.drawio.png)
 
 ## Software Used
-- Luxonis API for creating the image capturing, creating a neural network, object recognition: ![Here](https://github.com/luxonis/depthai)
+- Luxonis API for creating the image capturing, creating a neural network, object recognition: [Here](https://github.com/luxonis/depthai)
 
 ## Materials Used
 - Luxonis OAK-D Pro W Camera & Sensors
