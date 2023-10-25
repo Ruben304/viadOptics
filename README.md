@@ -15,6 +15,16 @@ Our device harnesses the capabilities of LIDAR sensors and advanced machine lear
 
 ## Software Used
 - Luxonis API for creating the image capturing, creating a neural network, object recognition: [Here](https://github.com/luxonis/depthai)
+  - Some of the Pre Build Code Samples that can prove useful to us are:
+    - API Interoperability
+    - Collision Avoidance
+    - Speed Calculation 
+    - Spatial Detection
+    - Yolo SDK
+    - Vehicle Detection
+    - Custom Trigger 
+    - Custom Trigger Action
+    - All the ones above can be found [Here](https://docs.luxonis.com/projects/sdk/en/latest/tutorials/code_samples/#)
 
 ## Materials Used
 - Luxonis OAK-D Pro W Camera & Sensors
