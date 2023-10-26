@@ -25,7 +25,10 @@ Our device harnesses the capabilities of LIDAR sensors and advanced machine lear
     - Custom Trigger 
     - Custom Trigger Action
     - All the ones above can be found [Here](https://docs.luxonis.com/projects/sdk/en/latest/tutorials/code_samples/#)
-
+#### Helpful Repos to look into 
+- depthai python api: [Here](https://github.com/luxonis/depthai-python)
+- depthai experiments: [Here](https://github.com/luxonis/depthai-experiments)
+- next steps: [Here](https://docs.luxonis.com/en/latest/pages/tutorials/first_steps/)
 ## Materials Used
 - Luxonis OAK-D Pro W Camera & Sensors
 - Raspberry Pi Zero 2 W
