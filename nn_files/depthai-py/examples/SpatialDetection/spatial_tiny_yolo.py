@@ -7,24 +7,12 @@ import depthai as dai
 import numpy as np
 import time
 
-'''
-Spatial Tiny-yolo example
-  Performs inference on RGB camera and retrieves spatial location coordinates: x,y,z relative to the center of depth map.
-  Can be used for tiny-yolo-v3 or tiny-yolo-v4 networks
-'''
-
-# Get argument first
-nnBlobPath = str((Path(__file__).parent / Path('../models/yolo-v4-tiny-tf_openvino_2021.4_6shave.blob')).resolve().absolute())
+nnBlobPath = str((Path(__file__).parent / Path('../models/5n_v1.blob')).resolve().absolute())
 if 1 < len(sys.argv):
     arg = sys.argv[1]
-    if arg == "yolo3":
-        nnBlobPath = str((Path(__file__).parent / Path('../models/yolo-v3-tiny-tf_openvino_2021.4_6shave.blob')).resolve().absolute())
-    elif arg == "yolo4":
-        nnBlobPath = str((Path(__file__).parent / Path('../models/yolo-v4-tiny-tf_openvino_2021.4_6shave.blob')).resolve().absolute())
-    else:
-        nnBlobPath = arg
+    nnBlobPath = str((Path(__file__).parent / Path('../models/5n_v1.blob')).resolve().absolute())
 else:
-    print("Using Tiny YoloV4 model. If you wish to use Tiny YOLOv3, call 'tiny_yolo.py yolo3'")
+    print("Using Tiny YoloV5n model, and it could not open blob'")
 
 if not Path(nnBlobPath).exists():
     import sys
@@ -32,18 +20,42 @@ if not Path(nnBlobPath).exists():
 
 # Tiny yolo v3/4 label texts
 labelMap = [
-    "person",         "bicycle",    "car",           "motorbike",     "aeroplane",   "bus",           "train",
-    "truck",          "boat",       "traffic light", "fire hydrant",  "stop sign",   "parking meter", "bench",
-    "bird",           "cat",        "dog",           "horse",         "sheep",       "cow",           "elephant",
-    "bear",           "zebra",      "giraffe",       "backpack",      "umbrella",    "handbag",       "tie",
-    "suitcase",       "frisbee",    "skis",          "snowboard",     "sports ball", "kite",          "baseball bat",
-    "baseball glove", "skateboard", "surfboard",     "tennis racket", "bottle",      "wine glass",    "cup",
-    "fork",           "knife",      "spoon",         "bowl",          "banana",      "apple",         "sandwich",
-    "orange",         "broccoli",   "carrot",        "hot dog",       "pizza",       "donut",         "cake",
-    "chair",          "sofa",       "pottedplant",   "bed",           "diningtable", "toilet",        "tvmonitor",
-    "laptop",         "mouse",      "remote",        "keyboard",      "cell phone",  "microwave",     "oven",
-    "toaster",        "sink",       "refrigerator",  "book",          "clock",       "vase",          "scissors",
-    "teddy bear",     "hair drier", "toothbrush"
+    "Bus",
+    "Bushes",
+    "Person",
+    "Truck",
+    "backpack",
+    "bench",
+    "bicycle",
+    "boat",
+    "branch",
+    "car",
+    "chair",
+    "clock",
+    "crosswalk",
+    "door",
+    "elevator",
+    "fire_hydrant",
+    "green_light",
+    "gun",
+    "handbag",
+    "motorcycle",
+    "person",
+    "pothole",
+    "rat",
+    "red_light",
+    "scooter",
+    "sheep",
+    "stairs",
+    "stop_sign",
+    "suitcase",
+    "traffic light",
+    "traffic_cone",
+    "train",
+    "tree",
+    "truck",
+    "umbrella",
+    "yellow_light"
 ]
 
 syncNN = True
@@ -94,7 +106,7 @@ spatialDetectionNetwork.setDepthLowerThreshold(100)
 spatialDetectionNetwork.setDepthUpperThreshold(5000)
 
 # Yolo specific parameters
-spatialDetectionNetwork.setNumClasses(80)
+spatialDetectionNetwork.setNumClasses(36) # ------------------------------change the number of classes based on label list
 spatialDetectionNetwork.setCoordinateSize(4)
 spatialDetectionNetwork.setAnchors([10,14, 23,27, 37,58, 81,82, 135,169, 344,319])
 spatialDetectionNetwork.setAnchorMasks({ "side26": [1,2,3], "side13": [3,4,5] })
@@ -185,15 +197,16 @@ with dai.Device(pipeline) as device:
             x2 = int(detection.xmax * width)
             y1 = int(detection.ymin * height)
             y2 = int(detection.ymax * height)
+            print(detection)
             try:
                 label = labelMap[detection.label]
             except:
                 label = detection.label
-            cv2.putText(frame, str(label), (x1 + 10, y1 + 20), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
-            cv2.putText(frame, "{:.2f}".format(detection.confidence*100), (x1 + 10, y1 + 35), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
-            cv2.putText(frame, f"X: {int(detection.spatialCoordinates.x)} mm", (x1 + 10, y1 + 50), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
-            cv2.putText(frame, f"Y: {int(detection.spatialCoordinates.y)} mm", (x1 + 10, y1 + 65), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
-            cv2.putText(frame, f"Z: {int(detection.spatialCoordinates.z)} mm", (x1 + 10, y1 + 80), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
+            cv2.putText(frame, str(label), (x1 + 10, y1 + 20), cv2.FONT_HERSHEY_TRIPLEX, 0.5, (255, 255, 255))
+            cv2.putText(frame, "{:.2f}".format(detection.confidence*100), (x1 + 10, y1 + 35), cv2.FONT_HERSHEY_TRIPLEX, 0.5, (255, 255, 255))
+            cv2.putText(frame, f"X: {int(detection.spatialCoordinates.x)} mm", (x1 + 10, y1 + 50), cv2.FONT_HERSHEY_TRIPLEX, 0.5, (255, 255, 255))
+            cv2.putText(frame, f"Y: {int(detection.spatialCoordinates.y)} mm", (x1 + 10, y1 + 65), cv2.FONT_HERSHEY_TRIPLEX, 0.5, (255, 255, 255))
+            cv2.putText(frame, f"Z: {int(detection.spatialCoordinates.z)} mm", (x1 + 10, y1 + 80), cv2.FONT_HERSHEY_TRIPLEX, 0.5, (255, 255, 255))
 
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, cv2.FONT_HERSHEY_SIMPLEX)
 

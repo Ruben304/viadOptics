@@ -5,13 +5,13 @@ import blobconverter  # blobconverter - compile and download MyriadX neural netw
 
 pipeline = depthai.Pipeline()
 cam_rgb = pipeline.create(depthai.node.ColorCamera) # colored camera
-cam_rgb.setPreviewSize(300, 300) # 300 x 300
+cam_rgb.setPreviewSize(640, 640) # 300 x 300
 cam_rgb.setInterleaved(False)
 
 detection_nn = pipeline.create(depthai.node.MobileNetDetectionNetwork)
 # Set path of the blob (NN model). We will use blobconverter to convert&download the model
-# detection_nn.setBlobPath("/path/to/model.blob")
-detection_nn.setBlobPath(blobconverter.from_zoo(name='mobilenet-ssd', shaves=6))
+detection_nn.setBlobPath("./models/best_openvino_2022.1_6shave.blob")
+# detection_nn.setBlobPath(blobconverter.from_zoo(name='mobilenet-ssd', shaves=6))
 detection_nn.setConfidenceThreshold(0.9)
 
 cam_rgb.preview.link(detection_nn.input) # preview
