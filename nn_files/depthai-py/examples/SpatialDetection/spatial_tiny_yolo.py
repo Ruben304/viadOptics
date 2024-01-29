@@ -8,17 +8,17 @@ import numpy as np
 import time
 
 nnBlobPath = str((Path(__file__).parent / Path('../models/5n_v1.blob')).resolve().absolute())
-if 1 < len(sys.argv):
-    arg = sys.argv[1]
-    nnBlobPath = str((Path(__file__).parent / Path('../models/5n_v1.blob')).resolve().absolute())
-else:
-    print("Using Tiny YoloV5n model, and it could not open blob'")
+# if 1 < len(sys.argv):
+#     arg = sys.argv[1]
+#     nnBlobPath = str((Path(__file__).parent / Path('../models/5n_v1.blob')).resolve().absolute())
+# else:
+#     print("Using Tiny YoloV5n model, and it could not open blob'")
 
 if not Path(nnBlobPath).exists():
     import sys
     raise FileNotFoundError(f'Required file/s not found, please run "{sys.executable} install_requirements.py"')
 
-# Tiny yolo v3/4 label texts
+# Label Maps
 labelMap = [
     "Bus",
     "Bushes",
@@ -211,7 +211,7 @@ with dai.Device(pipeline) as device:
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, cv2.FONT_HERSHEY_SIMPLEX)
 
         cv2.putText(frame, "NN fps: {:.2f}".format(fps), (2, frame.shape[0] - 4), cv2.FONT_HERSHEY_TRIPLEX, 0.4, color)
-        cv2.imshow("depth", depthFrameColor)
+        #cv2.imshow("depth", depthFrameColor)
         cv2.imshow("rgb", frame)
 
         if cv2.waitKey(1) == ord('q'):
