@@ -30,9 +30,9 @@ Our device harnesses the capabilities of LIDAR sensors and advanced machine lear
 - depthai experiments: [Here](https://github.com/luxonis/depthai-experiments)
 - next steps: [Here](https://docs.luxonis.com/en/latest/pages/tutorials/first_steps/)
 ## Materials Used
-- Luxonis OAK-D Pro W Camera & Sensors
-- Raspberry Pi Zero 2 W
+- [Luxonis OAK-D Pro W]() (OV9782 Image Sensor) Camera & Sensors
+- Raspberry Pi Zero 2 W as Host Computer
 - Haptic Motor
-- GoPro Batteries
-- 3D Print frames & enclosure
+- Camera Batteries
+- SLA 3D Printed Resin Frames & Enclosure
 
