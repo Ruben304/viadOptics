@@ -7,8 +7,8 @@ def onConnect(client, userdata, flags, rc):
 def onFail(client, userdata, flags, rc):
     print('Failed to connect to MQTT broker')
 
-def onMessage(client, userdata, msg):
-    print('Received message:', msg)
+def onMessage(client, userdata, msg: mqtt.MQTTMessage):
+    print('Received message:', msg.payload.decode())
 
 client = mqtt.Client()
 client.on_connect = onConnect
