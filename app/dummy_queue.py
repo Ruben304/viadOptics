@@ -1,5 +1,5 @@
 # Run docker mosquitto
-# docker run -it --rm -p 1883:1883 -p 9001:9001 --name mosquitto eclipse-mosquitto
+# docker run -it -p 1883:1883 -v /Users/axelsariel/repos/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf eclipse-mosquitto
 
 import paho.mqtt.client as mqtt
 

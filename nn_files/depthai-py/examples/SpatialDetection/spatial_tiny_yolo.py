@@ -60,6 +60,18 @@ labelMap = [
 
 syncNN = True
 
+# System Log Info
+def printSystemInformation(info):
+    m = 1024 * 1024 # MiB
+    print(f"Ddr used / total - {info.ddrMemoryUsage.used / m:.2f} / {info.ddrMemoryUsage.total / m:.2f} MiB")
+    print(f"Cmx used / total - {info.cmxMemoryUsage.used / m:.2f} / {info.cmxMemoryUsage.total / m:.2f} MiB")
+    print(f"LeonCss heap used / total - {info.leonCssMemoryUsage.used / m:.2f} / {info.leonCssMemoryUsage.total / m:.2f} MiB")
+    print(f"LeonMss heap used / total - {info.leonMssMemoryUsage.used / m:.2f} / {info.leonMssMemoryUsage.total / m:.2f} MiB")
+    t = info.chipTemperature
+    print(f"Chip temperature - average: {t.average:.2f}, css: {t.css:.2f}, mss: {t.mss:.2f}, upa: {t.upa:.2f}, dss: {t.dss:.2f}")
+    print(f"Cpu usage - Leon CSS: {info.leonCssCpuUsage.average * 100:.2f}%, Leon MSS: {info.leonMssCpuUsage.average * 100:.2f} %")
+    print("----------------------------------------")
+
 # Create pipeline
 pipeline = dai.Pipeline()
 
@@ -69,12 +81,15 @@ spatialDetectionNetwork = pipeline.create(dai.node.YoloSpatialDetectionNetwork)
 monoLeft = pipeline.create(dai.node.MonoCamera)
 monoRight = pipeline.create(dai.node.MonoCamera)
 stereo = pipeline.create(dai.node.StereoDepth)
+sysLog = pipeline.create(dai.node.SystemLogger)
+sysLogOut = pipeline.create(dai.node.XLinkOut)
 nnNetworkOut = pipeline.create(dai.node.XLinkOut)
 
 xoutRgb = pipeline.create(dai.node.XLinkOut)
 xoutNN = pipeline.create(dai.node.XLinkOut)
 xoutDepth = pipeline.create(dai.node.XLinkOut)
 
+sysLogOut.setStreamName("sysinfo")
 xoutRgb.setStreamName("rgb")
 xoutNN.setStreamName("detections")
 xoutDepth.setStreamName("depth")
@@ -90,6 +105,8 @@ monoLeft.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
 monoLeft.setCamera("left")
 monoRight.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
 monoRight.setCamera("right")
+
+sysLog.setRate(1)  # 1 Hz
 
 # setting node configs
 stereo.setDefaultProfilePreset(dai.node.StereoDepth.PresetMode.HIGH_DENSITY)
@@ -127,6 +144,19 @@ spatialDetectionNetwork.out.link(xoutNN.input)
 stereo.depth.link(spatialDetectionNetwork.inputDepth)
 spatialDetectionNetwork.passthroughDepth.link(xoutDepth.input)
 spatialDetectionNetwork.outNetwork.link(nnNetworkOut.input)
+sysLog.out.link(sysLogOut.input)
+
+# MQTT Initialize
+import paho.mqtt.client as mqtt
+def onConnect(client, userdata, flags, rc):
+    print('Connected to MQTT Broker')
+def onPublish(client, userdata, mid):
+    print('Published MQTT message:', mid)
+
+client = mqtt.Client()
+client.on_connect = onConnect
+# client.on_publish = onPublish
+client.connect('localhost')
 
 # Connect to device and start pipeline
 with dai.Device(pipeline) as device:
@@ -136,6 +166,7 @@ with dai.Device(pipeline) as device:
     detectionNNQueue = device.getOutputQueue(name="detections", maxSize=4, blocking=False)
     depthQueue = device.getOutputQueue(name="depth", maxSize=4, blocking=False)
     networkQueue = device.getOutputQueue(name="nnNetwork", maxSize=4, blocking=False)
+    qSysInfo: dai.DataOutputQueue = device.getOutputQueue(name="sysinfo", maxSize=4, blocking=False)
 
     startTime = time.monotonic()
     counter = 0
@@ -148,13 +179,14 @@ with dai.Device(pipeline) as device:
         inDet = detectionNNQueue.get()
         depth = depthQueue.get()
         inNN = networkQueue.get()
+        sysInfo = qSysInfo.tryGet()
 
-        if printOutputLayersOnce:
-            toPrint = 'Output layer names:'
-            for ten in inNN.getAllLayerNames():
-                toPrint = f'{toPrint} {ten},'
-            print(toPrint)
-            printOutputLayersOnce = False
+        # if printOutputLayersOnce:
+        #     toPrint = 'Output layer names:'
+        #     for ten in inNN.getAllLayerNames():
+        #         toPrint = f'{toPrint} {ten},'
+        #     print(toPrint)
+        #     printOutputLayersOnce = False
 
         frame = inPreview.getCvFrame()
         depthFrame = depth.getFrame() # depthFrame values are in millimeters
@@ -180,7 +212,16 @@ with dai.Device(pipeline) as device:
         # If the frame is available, draw bounding boxes on it and show the frame
         height = frame.shape[0]
         width  = frame.shape[1]
+        detectionMessages = []
         for detection in detections:
+            detection: dai.SpatialImgDetection = detection
+            thisDetection = {
+                'label' : labelMap[detection.label],
+                # 'xyz' : str(detection.spatialCoordinates.x) + str(detection.spatialCoordinates.y) + str(detection.spatialCoordinates.z),
+                'confidence' : detection.confidence
+            }
+            detectionMessages.append(str(thisDetection))
+
             roiData = detection.boundingBoxMapping
             roi = roiData.roi
             roi = roi.denormalize(depthFrameColor.shape[1], depthFrameColor.shape[0])
@@ -197,7 +238,7 @@ with dai.Device(pipeline) as device:
             x2 = int(detection.xmax * width)
             y1 = int(detection.ymin * height)
             y2 = int(detection.ymax * height)
-            print(detection)
+            # print(detection)
             try:
                 label = labelMap[detection.label]
             except:
@@ -209,10 +250,21 @@ with dai.Device(pipeline) as device:
             cv2.putText(frame, f"Z: {int(detection.spatialCoordinates.z)} mm", (x1 + 10, y1 + 80), cv2.FONT_HERSHEY_TRIPLEX, 0.5, (255, 255, 255))
 
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, cv2.FONT_HERSHEY_SIMPLEX)
+        
+        # Send MQTT Frame Message
+        numDetections = len(detectionMessages)
+        if numDetections > 0:
+            # print(time.time(), 'There was', numDetections, 'detections in this message')
+            client.publish('detections', str(detectionMessages))
+
+        if not sysInfo == None:
+            printSystemInformation(sysInfo)
+
 
         cv2.putText(frame, "NN fps: {:.2f}".format(fps), (2, frame.shape[0] - 4), cv2.FONT_HERSHEY_TRIPLEX, 0.4, color)
         #cv2.imshow("depth", depthFrameColor)
         cv2.imshow("rgb", frame)
 
         if cv2.waitKey(1) == ord('q'):
+            client.disconnect()
             break
