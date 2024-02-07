@@ -15,6 +15,6 @@ client.on_publish = onPublish
 
 client.connect('localhost')
 
-client.publish('testTopic', 'Hello world!')
+client.publish('hpt', 'car')
 
 client.loop_forever()

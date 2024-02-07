@@ -1,41 +1,72 @@
 import paho.mqtt.client as mqtt
+import json
+
 
 def onConnect(client, userdata, flags, rc):
     print('Connected to MQTT broker')
-    client.subscribe('testTopic')
+    client.subscribe('hpt')
 
 
 def onMessage(client, userdata, msg: mqtt.MQTTMessage):
-    msgContent = msg.payload.decode()
-    print('Received message:', msgContent)
-    dangerFlag = False
-    moderateFlag = False
+    try:
+        # decode to json
+        msgContent = json.loads(msg.payload.decode())
 
-    if 'car' in msgContent:
-        dangerFlag = True
-        print('There is a car, vroom vroom!')
-    elif 'branch' in msgContent:
-        moderateFlag = True
-        print('There is a car, vroom vroom!')
+        print('Received message:', msgContent)
+        buzzOne = False
+        buzzTwo = False
+        buzzThree = False
+        buzzFour = False
+        zCord = msgContent.get('zCoordinate', 'placeHolderX')
+        xCord = msgContent.get('xCoordinate', 'placeHolderY')
+        direction = ''
+        if msgContent.get('type') == 'car':
+            alert(xCord, buzzOne, buzzTwo, buzzThree, buzzFour, direction)
 
-    if dangerFlag:
-        highAlert()
-    elif moderateFlag:
-        alert()
+            # Publish JSON formatted messages
+            client.publish('hpt', json.dumps(
+                {'response': 'Hello haptic!', 'buzzers': [buzzOne, buzzTwo, buzzThree, buzzFour]}))
+            client.publish('tts', json.dumps({'response': 'Hello texttospeech!', 'direction': direction}))
 
+        elif msgContent.get('type') == 'branch':
+            print('There is a branch, watch out!')
+    except json.JSONDecodeError as e:
+        print('Error decoding JSON: ', e)
 
 
 def onFail(client, userdata, flags, rc):
     print('Failed to connect to MQTT broker')
 
 
-def highAlert():
-    allBuzzers = True
-    print('Move before you die!')
+def highAlert(xCord, buzzOne, buzzTwo, buzzThree, buzzFour, direction):
+    if xCord > 0:
+        direction = 'right'
+        buzzOne = True
+        buzzTwo = True
+    elif xCord < 0:
+        direction = 'left'
+        buzzThree = True
+        buzzFour = True
+    else:
+        direction = 'straight'
+        buzzOne = True
+        buzzThree = True
 
-def alert():
-    buzzers = True
-    print('Watch out!')
+
+def alert(xCord, buzzOne, buzzTwo, buzzThree, buzzFour, direction):
+    if xCord > 0:
+        direction = 'right'
+        buzzOne = True
+        buzzTwo = True
+    elif xCord < 0:
+        direction = 'left'
+        buzzThree = True
+        buzzFour = True
+    else:
+        direction = 'straight'
+        buzzOne = True
+        buzzThree = True
+
 
 client = mqtt.Client()
 client.on_connect = onConnect
@@ -44,24 +75,3 @@ client.on_message = onMessage
 
 client.connect('localhost')
 client.loop_forever()
-
-# import json
-#
-#
-# def onMessage(client, userdata, msg: mqtt.MQTTMessage):
-#     try:
-#         # Assuming the message payload is a JSON string
-#         message_data = json.loads(msg.payload.decode())
-#         command = message_data.get('command')
-#         value = message_data.get('value')
-#
-#         if command == 'light' and value == 'on':
-#             print('Turning on the light!')
-#             # Code to turn on the light
-#         elif command == 'light' and value == 'off':
-#             print('Turning off the light!')
-#             # Code to turn off the light
-#         else:
-#             print('Unrecognized command or value')
-#     except json.JSONDecodeError:
-#         print('Error decoding JSON from message')
