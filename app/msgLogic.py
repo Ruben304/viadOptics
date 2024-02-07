@@ -22,12 +22,25 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
             else:
                 buzzers, direction = alert(xCord)
 
+            message = f"There is a car {zCord} meters away from you on your {direction}"
             # publish JSON formatted mgs
             client.publish('hpt', json.dumps(
                 {'obstacle': 'car!', 'buzzers': buzzers}))
-            client.publish('tts', json.dumps({'obstacle': 'car!', 'direction': direction}))
+            client.publish('tts', json.dumps(
+                {'message': message}))
 
         elif msgContent.get('type') == 'branch':
+            xCord = msgContent.get('xCoordinate', 0)
+            zCord = msgContent.get('zCoordinate', 0)
+
+            buzzers, direction = alert(xCord)
+
+            message = f"There is a branch {zCord} meters away from you on your {direction}"
+            # publish JSON formatted mgs
+            client.publish('hpt', json.dumps(
+                {'obstacle': 'car!', 'buzzers': buzzers}))
+            client.publish('tts', json.dumps(
+                {'message': message}))
             print('There is a branch, watch out!')
 
     except json.JSONDecodeError as e:
