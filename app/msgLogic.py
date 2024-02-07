@@ -11,25 +11,25 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
     try:
         # decode to json
         msgContent = json.loads(msg.payload.decode())
-
         print('Received message:', msgContent)
-        buzzOne = False
-        buzzTwo = False
-        buzzThree = False
-        buzzFour = False
-        zCord = msgContent.get('zCoordinate', 'placeHolderX')
-        xCord = msgContent.get('xCoordinate', 'placeHolderY')
-        direction = ''
-        if msgContent.get('type') == 'car':
-            alert(xCord, buzzOne, buzzTwo, buzzThree, buzzFour, direction)
 
-            # Publish JSON formatted messages
+        if msgContent.get('type') == 'car':
+            xCord = msgContent.get('xCoordinate', 0)
+            zCord = msgContent.get('zCoordinate', 0)
+
+            if zCord < 3:
+                buzzers, direction = highAlert(xCord)
+            else:
+                buzzers, direction = alert(xCord)
+
+            # publish JSON formatted mgs
             client.publish('hpt', json.dumps(
-                {'response': 'Hello haptic!', 'buzzers': [buzzOne, buzzTwo, buzzThree, buzzFour]}))
-            client.publish('tts', json.dumps({'response': 'Hello texttospeech!', 'direction': direction}))
+                {'obstacle': 'car!', 'buzzers': buzzers}))
+            client.publish('tts', json.dumps({'obstacle': 'car!', 'direction': direction}))
 
         elif msgContent.get('type') == 'branch':
             print('There is a branch, watch out!')
+
     except json.JSONDecodeError as e:
         print('Error decoding JSON: ', e)
 
@@ -38,34 +38,38 @@ def onFail(client, userdata, flags, rc):
     print('Failed to connect to MQTT broker')
 
 
-def highAlert(xCord, buzzOne, buzzTwo, buzzThree, buzzFour, direction):
+def highAlert(xCord):
+    # Initialize buzzers to False
+    buzzers = [True, True, True, True]  # the four buzzers we would have
+
     if xCord > 0:
         direction = 'right'
-        buzzOne = True
-        buzzTwo = True
     elif xCord < 0:
         direction = 'left'
-        buzzThree = True
-        buzzFour = True
     else:
         direction = 'straight'
-        buzzOne = True
-        buzzThree = True
+    return buzzers
 
 
-def alert(xCord, buzzOne, buzzTwo, buzzThree, buzzFour, direction):
+def alert(xCord):
+    # Initialize buzzers to False
+    buzzers = [False, False, False, False]  # the four buzzers we would have
+    direction = ''
+
     if xCord > 0:
         direction = 'right'
-        buzzOne = True
-        buzzTwo = True
+        buzzers[0] = True  # buzzOne
+        buzzers[1] = True  # buzzTwo
     elif xCord < 0:
         direction = 'left'
-        buzzThree = True
-        buzzFour = True
+        buzzers[2] = True  # buzzThree
+        buzzers[3] = True  # buzzFour
     else:
         direction = 'straight'
-        buzzOne = True
-        buzzThree = True
+        buzzers[0] = True  # buzzOne
+        buzzers[2] = True  # buzzThree
+
+    return buzzers, direction
 
 
 client = mqtt.Client()
