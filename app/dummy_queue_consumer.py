@@ -3,8 +3,6 @@ import json
 import pygame  # Used for audio output
 from gtts import gTTS  # Used for text-to-speech
 import os  # Used for getting json file location
-import time  # Used to get timestamp to check if json changed
-import glob  # Used to find MP3 files in the folder
 
 previous_message = None  # Initialize a variable to store the previous message
 
