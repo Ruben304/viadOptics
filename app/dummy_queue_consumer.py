@@ -3,8 +3,14 @@ import json
 import pygame  # Used for audio output
 from gtts import gTTS  # Used for text-to-speech
 import os  # Used for getting json file location
+import glob  # Used to find MP3 files in the folder
 
 previous_message = None  # Initialize a variable to store the previous message
+
+def delete_all_mp3_files():
+    mp3_files = glob.glob("*.mp3")
+    for mp3_file in mp3_files:
+        os.remove(mp3_file)
 
 def onConnect(client, userdata, flags, rc):
     print('Connected to MQTT broker')
@@ -44,6 +50,7 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
         # Delete the MP3 file after it finishes playing
         os.remove(mp3_file)
 
+delete_all_mp3_files()
 
 pygame.init()
 
