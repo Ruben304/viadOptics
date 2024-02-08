@@ -1,12 +1,14 @@
 import paho.mqtt.client as mqtt
 import json
 
+PWIDTH = 1400
 
 def onConnect(client, userdata, flags, rc):
     print('Connected to MQTT broker')
     client.subscribe('detect')
 
 
+# this is the base on receiving a regular MQTT and publishing a json
 def onMessage(client, userdata, msg: mqtt.MQTTMessage):
     # try:
         # decode to json
@@ -29,7 +31,7 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
             # publish JSON formatted mgs
     client.publish('hpt', json.dumps(
             {'obstacle': 'car!', 'buzzers': buzzers}))
-    client.publish('topic', json.dumps(
+    client.publish('tts', json.dumps(
             {'message': message}))
 
         # elif msgContent.get('type') == 'branch':

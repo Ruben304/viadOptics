@@ -3,7 +3,7 @@ import json
 
 def onConnect(client, userdata, flags, rc):
     print('Connected to MQTT broker')
-    client.subscribe('detect')
+    client.subscribe('tts')
 
 def onFail(client, userdata, flags, rc):
     print('Failed to connect to MQTT broker')
