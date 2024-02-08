@@ -15,6 +15,6 @@ client.on_publish = onPublish
 
 client.connect('localhost')
 
-client.publish('hpt', 'car')
+client.publish('detect', 'car is 5 meter away')
 
 client.loop_forever()

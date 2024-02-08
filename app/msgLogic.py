@@ -4,47 +4,50 @@ import json
 
 def onConnect(client, userdata, flags, rc):
     print('Connected to MQTT broker')
-    client.subscribe('hpt')
+    client.subscribe('detect')
 
 
 def onMessage(client, userdata, msg: mqtt.MQTTMessage):
-    try:
+    # try:
         # decode to json
-        msgContent = json.loads(msg.payload.decode())
-        print('Received message:', msgContent)
+        # msgContent = json.loads(msg.payload.decode())
+    msgContent = msg.payload.decode()
+    print('Received message:', msgContent)
 
-        if msgContent.get('type') == 'car':
-            xCord = msgContent.get('xCoordinate', 0)
-            zCord = msgContent.get('zCoordinate', 0)
-
-            if zCord < 3:
-                buzzers, direction = highAlert(xCord)
-            else:
-                buzzers, direction = alert(xCord)
-
-            message = f"There is a car {zCord} meters away from you on your {direction}"
+    # if msgContent == 'car':
+    #         # xCord = msgContent.get('xCoordinate', 0)
+    #         # zCord = msgContent.get('zCoordinate', 0)
+    xCord = 0
+    zCord = 0
+    #
+    #     if zCord < 3:
+    #         buzzers, direction = highAlert(xCord)
+    #     else:
+    buzzers, direction = alert(xCord)
+    #
+    message = f"There is a car {zCord} meters away from you on your {direction}"
             # publish JSON formatted mgs
-            client.publish('hpt', json.dumps(
-                {'obstacle': 'car!', 'buzzers': buzzers}))
-            client.publish('tts', json.dumps(
-                {'message': message}))
+    client.publish('hpt', json.dumps(
+            {'obstacle': 'car!', 'buzzers': buzzers}))
+    client.publish('topic', json.dumps(
+            {'message': message}))
 
-        elif msgContent.get('type') == 'branch':
-            xCord = msgContent.get('xCoordinate', 0)
-            zCord = msgContent.get('zCoordinate', 0)
+        # elif msgContent.get('type') == 'branch':
+        #     xCord = msgContent.get('xCoordinate', 0)
+        #     zCord = msgContent.get('zCoordinate', 0)
+        #
+        #     buzzers, direction = alert(xCord)
+        #
+        #     message = f"There is a branch {zCord} meters away from you on your {direction}"
+        #     # publish JSON formatted mgs
+        #     client.publish('hpt', json.dumps(
+        #         {'obstacle': 'car!', 'buzzers': buzzers}))
+        #     client.publish('tts', json.dumps(
+        #         {'message': message}))
+        #     print('There is a branch, watch out!')
 
-            buzzers, direction = alert(xCord)
-
-            message = f"There is a branch {zCord} meters away from you on your {direction}"
-            # publish JSON formatted mgs
-            client.publish('hpt', json.dumps(
-                {'obstacle': 'car!', 'buzzers': buzzers}))
-            client.publish('tts', json.dumps(
-                {'message': message}))
-            print('There is a branch, watch out!')
-
-    except json.JSONDecodeError as e:
-        print('Error decoding JSON: ', e)
+    # except json.JSONDecodeError as e:
+    #     print('Error decoding JSON: ', e)
 
 
 def onFail(client, userdata, flags, rc):
