@@ -10,84 +10,52 @@ def onConnect(client, userdata, flags, rc):
 
 # this is the base on receiving a regular MQTT and publishing a json
 def onMessage(client, userdata, msg: mqtt.MQTTMessage):
-    # try:
+    try:
         # decode to json
-        # msgContent = json.loads(msg.payload.decode())
-    msgContent = msg.payload.decode()
-    print('Received message:', msgContent)
+        msgContent = json.loads(msg.payload.decode())
+        print('Received message:', msgContent)
 
-    # if msgContent == 'car':
-    #         # xCord = msgContent.get('xCoordinate', 0)
-    #         # zCord = msgContent.get('zCoordinate', 0)
-    xCord = 0
-    zCord = 0
-    #
-    #     if zCord < 3:
-    #         buzzers, direction = highAlert(xCord)
-    #     else:
-    buzzers, direction = alert(xCord)
-    #
-    message = f"There is a car {zCord} meters away from you on your {direction}"
+        if msgContent == 'car':
+            xCord = msgContent.get('xCoordinate', 0)
+            zCord = msgContent.get('zCoordinate', 0)
+            obj = 'car'
+            degree = (xCord/PWIDTH) * 180
+            message, intensity = alert(obj, degree, zCord)
             # publish JSON formatted mgs
-    client.publish('hpt', json.dumps(
-            {'obstacle': 'car!', 'buzzers': buzzers}))
-    client.publish('tts', json.dumps(
+            client.publish('hpt', json.dumps(
+            {'degree': degree, 'intensity': intensity}))
+            client.publish('tts', json.dumps(
             {'message': message}))
 
-        # elif msgContent.get('type') == 'branch':
-        #     xCord = msgContent.get('xCoordinate', 0)
-        #     zCord = msgContent.get('zCoordinate', 0)
-        #
-        #     buzzers, direction = alert(xCord)
-        #
-        #     message = f"There is a branch {zCord} meters away from you on your {direction}"
-        #     # publish JSON formatted mgs
-        #     client.publish('hpt', json.dumps(
-        #         {'obstacle': 'car!', 'buzzers': buzzers}))
-        #     client.publish('tts', json.dumps(
-        #         {'message': message}))
-        #     print('There is a branch, watch out!')
-
-    # except json.JSONDecodeError as e:
-    #     print('Error decoding JSON: ', e)
+    except json.JSONDecodeError as e:
+        print('Error decoding JSON: ', e)
 
 
 def onFail(client, userdata, flags, rc):
     print('Failed to connect to MQTT broker')
 
 
-def highAlert(xCord):
-    # Initialize buzzers to False
-    buzzers = [True, True, True, True]  # the four buzzers we would have
+def alert(obj, degree, zCord):
+    message = ''
+    intensity = 0
 
-    if xCord > 0:
-        direction = 'right'
-    elif xCord < 0:
-        direction = 'left'
+    if zCord < 2:
+        intensity = 100
+    elif 2 <= zCord < 5:
+        intensity = 80
+    elif 5 <= zCord < 8:
+        intensity = 60
+    elif 8 <= zCord < 10:
+        intensity = 40
+
+    if degree < 60:
+        message = f"There is a {obj} {zCord} meters away from you on your left"
+    elif degree > 120:
+        message = f"There is a {obj} {zCord} meters away from you on your right"
     else:
-        direction = 'straight'
-    return buzzers
+        message = f"There is a {obj} {zCord} meters away in front of you"
 
-
-def alert(xCord):
-    # Initialize buzzers to False
-    buzzers = [False, False, False, False]  # the four buzzers we would have
-    direction = ''
-
-    if xCord > 0:
-        direction = 'right'
-        buzzers[0] = True  # buzzOne
-        buzzers[1] = True  # buzzTwo
-    elif xCord < 0:
-        direction = 'left'
-        buzzers[2] = True  # buzzThree
-        buzzers[3] = True  # buzzFour
-    else:
-        direction = 'straight'
-        buzzers[0] = True  # buzzOne
-        buzzers[2] = True  # buzzThree
-
-    return buzzers, direction
+    return message, intensity
 
 
 client = mqtt.Client()
