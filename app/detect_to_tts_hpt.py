@@ -1,31 +1,28 @@
 import paho.mqtt.client as mqtt
 import json
+import ast
+
 
 PWIDTH = 1400
 
 def onConnect(client, userdata, flags, rc):
     print('Connected to MQTT broker')
-    client.subscribe('detect')
+    client.subscribe('detections')
 
 
 # this is the base on receiving a regular MQTT and publishing a json
 def onMessage(client, userdata, msg: mqtt.MQTTMessage):
     try:
-        # decode to json
-        msgContent = json.loads(msg.payload.decode())
-        print('Received message:', msgContent)
+        # getting content msg rdy to search
+        msgContent = msg.payload.decode()
+        msgList = ast.literal_eval(msgContent)
+        msgDict = ast.literal_eval(msgList[0])
+        print('Received dict:', msgDict)
 
-        if msgContent == 'car':
-            xCord = msgContent.get('xCoordinate', 0)
-            zCord = msgContent.get('zCoordinate', 0)
-            obj = 'car'
-            degree = (xCord/PWIDTH) * 180
-            message, intensity = alert(obj, degree, zCord)
-            # publish JSON formatted mgs
-            client.publish('hpt', json.dumps(
-            {'degree': degree, 'intensity': intensity}))
-            client.publish('tts', json.dumps(
-            {'message': message}))
+        label = msgDict.get('label', '').lower()
+        if label:
+            if msgDict.get('confidence') > 80:
+                process_label(label, msgDict, client)
 
     except json.JSONDecodeError as e:
         print('Error decoding JSON: ', e)
@@ -35,17 +32,44 @@ def onFail(client, userdata, flags, rc):
     print('Failed to connect to MQTT broker')
 
 
+def process_label(label, msgDict, client):
+    if label == 'train':
+        xCord = msgDict.get('x')
+        zCord = msgDict.get('z')
+        degree = (xCord / PWIDTH) * 180
+        message, intensity = alert(label, degree, zCord)
+        # publish JSON messages
+        client.publish('hpt', json.dumps({'degree': degree, 'intensity': intensity}))
+        client.publish('tts', json.dumps({'message': message}))
+    elif label == 'car':
+        xCord = msgDict.get('x')
+        zCord = msgDict.get('z')
+        degree = (xCord / PWIDTH) * 180
+        message, intensity = alert(label, degree, zCord)
+        # publish JSON messages
+        client.publish('hpt', json.dumps({'degree': degree, 'intensity': intensity}))
+        client.publish('tts', json.dumps({'message': message}))
+    if label == 'person':
+        xCord = msgDict.get('x')
+        zCord = msgDict.get('z')
+        degree = (xCord / PWIDTH) * 180
+        message, intensity = alert(label, degree, zCord)
+        # publish JSON messages
+        client.publish('hpt', json.dumps({'degree': degree, 'intensity': intensity}))
+        client.publish('tts', json.dumps({'message': message}))
+    # add all other map cases
+
 def alert(obj, degree, zCord):
     message = ''
     intensity = 0
 
-    if zCord < 2:
+    if zCord < 304:  # 1 foot
         intensity = 100
-    elif 2 <= zCord < 5:
+    elif 304 <= zCord < 609:  # 1 to 2 feet
         intensity = 80
-    elif 5 <= zCord < 8:
+    elif 609 <= zCord < 1219:  # 2 to 4 feet
         intensity = 60
-    elif 8 <= zCord < 10:
+    elif 1219 <= zCord < 1524:  # 4 to 5 feet
         intensity = 40
 
     if degree < 60:

@@ -6,6 +6,7 @@ import cv2
 import depthai as dai
 import numpy as np
 import time
+import paho.mqtt.client as mqtt
 
 nnBlobPath = str((Path(__file__).parent / Path('../models/5n_v1.blob')).resolve().absolute())
 # if 1 < len(sys.argv):
@@ -214,12 +215,16 @@ with dai.Device(pipeline) as device:
         width  = frame.shape[1]
         detectionMessages = []
         for detection in detections:
+            # have to cast detection to SpatialImgDetection to access spatial coordinates
             detection: dai.SpatialImgDetection = detection
             thisDetection = {
-                'label' : labelMap[detection.label],
-                # 'xyz' : str(detection.spatialCoordinates.x) + str(detection.spatialCoordinates.y) + str(detection.spatialCoordinates.z),
-                'confidence' : detection.confidence
+                'label': labelMap[detection.label],
+                'confidence': detection.confidence,
+                'x': int(detection.spatialCoordinates.x),  # Spatial X coordinate (mm)
+                'y': int(detection.spatialCoordinates.y),  # Spatial Y coordinate (mm)
+                'z': int(detection.spatialCoordinates.z)  # Spatial Z coordinate (mm)
             }
+            # append the detection dictionary to messages
             detectionMessages.append(str(thisDetection))
 
             roiData = detection.boundingBoxMapping
@@ -250,7 +255,7 @@ with dai.Device(pipeline) as device:
             cv2.putText(frame, f"Z: {int(detection.spatialCoordinates.z)} mm", (x1 + 10, y1 + 80), cv2.FONT_HERSHEY_TRIPLEX, 0.5, (255, 255, 255))
 
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, cv2.FONT_HERSHEY_SIMPLEX)
-        
+
         # Send MQTT Frame Message
         numDetections = len(detectionMessages)
         if numDetections > 0:
