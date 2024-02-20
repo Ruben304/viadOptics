@@ -7,10 +7,10 @@ import glob  # Used to find MP3 files in the folder
 
 previous_message = None  # Initialize a variable to store the previous message
 
-def delete_all_mp3_files():
-    mp3_files = glob.glob("*.mp3")
-    for mp3_file in mp3_files:
-        os.remove(mp3_file)
+def delete_all_wav_files():
+    wav_files = glob.glob("*.wav")
+    for wav_file in wav_files:
+        os.remove(wav_file)
 
 def onConnect(client, userdata, flags, rc):
     print('Connected to MQTT broker')
@@ -29,28 +29,29 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
         previous_message = messageJSON  # Update the previous message with the new one
         message_text = messageJSON.get("message", "")
         tts = gTTS(text=message_text, lang = 'en')
-        mp3_file = "myText.mp3"
-        tts.save(mp3_file)
-        # Initialize the mixer again
+        wav_file = "myText.wav"
+        tts.save(wav_file)
+        # Initialize pygame and mixer
+        pygame.init()
         pygame.mixer.init()
 
-        # Load the updated MP3 file
-        pygame.mixer.music.load(mp3_file)
+        # Load the WAV file as a sound object
+        sound = pygame.mixer.Sound(wav_file)
 
-        # Play the updated audio
-        pygame.mixer.music.play()
+        # Play the audio
+        sound.play()
 
         # Wait for the audio to finish playing
-        while pygame.mixer.music.get_busy():
+        while pygame.mixer.get_busy():
             pygame.time.Clock().tick(10)
 
-        # Quit the mixer after audio playback
-        pygame.mixer.quit()
-        
-        # Delete the MP3 file after it finishes playing
-        os.remove(mp3_file)
+        # Quit pygame
+        pygame.quit()
 
-delete_all_mp3_files()
+        # Remove the temporary WAV file if needed
+        os.remove(wav_file)
+
+delete_all_wav_files()
 
 pygame.init()
 
