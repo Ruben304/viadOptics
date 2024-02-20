@@ -154,7 +154,7 @@ if not args.skip_depthai:
         if not success:
             print("Couldn't install dependencies as wheels and trying to compile from sources failed")
             print("Check https://github.com/luxonis/depthai-python#dependencies on retrieving dependencies for compiling from sources")
-
+'''
 downloader_cmd = [sys.executable, f"{examples_dir}/downloader/downloader.py", "--all", "--cache_dir", f"{examples_dir}/downloader/", "--num_attempts", "5", "-o", f"{examples_dir}/models"]
 if args.dry_run:
     prettyPrint(downloader_cmd)
@@ -180,7 +180,6 @@ if args.convert != convert_default:
         else:
             subprocess.check_call(cmd)
 
-'''
 if requireOpenCv and thisPlatform == "aarch64":
     from os import environ
     OPENBLAS_CORE_TYPE = environ.get('OPENBLAS_CORE_TYPE')
