@@ -180,6 +180,7 @@ if args.convert != convert_default:
         else:
             subprocess.check_call(cmd)
 
+'''
 if requireOpenCv and thisPlatform == "aarch64":
     from os import environ
     OPENBLAS_CORE_TYPE = environ.get('OPENBLAS_CORE_TYPE')
@@ -190,3 +191,4 @@ if requireOpenCv and thisPlatform == "aarch64":
         SUGGESTION='echo "export OPENBLAS_CORETYPE=ARMV8" >> ~/.bashrc && source ~/.bashrc'
         print(f'{WARNING}WARNING:{LINE_CL} Need to set OPENBLAS_CORE_TYPE environment variable, otherwise opencv will fail with illegal instruction.')
         print(f'Run: {RED}{SUGGESTION}{LINE_CL}')
+'''
