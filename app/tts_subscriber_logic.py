@@ -27,10 +27,10 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
     global previous_message  # Use the global variable to store the previous message
     messageJSON = json.loads(msg.payload.decode())
 
+    # client.publish('tts_done', json.dumps({"status": "free"}))
     # Compare the current message with the previous one
     if messageJSON != previous_message:
         print('Received message:', messageJSON)
-        # client.publish('tts_done', json.dumps({"status": 'busy'}))
         previous_message = messageJSON  # Update the previous message with the new one
         message_text = messageJSON.get("message", "")
         tts = gTTS(text=message_text, lang = 'en')
@@ -39,6 +39,8 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
         # Initialize pygame and mixer
         pygame.init()
         pygame.mixer.init()
+
+        client.publish('tts_done', json.dumps({"status": "busy"}))
 
         # Load the WAV file as a sound object
         sound = pygame.mixer.Sound(wav_file)
@@ -51,7 +53,7 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
             pygame.time.Clock().tick(10)
 
         # alert the message is done
-        # client.publish('tts_done', json.dumps({"status": "done"}))
+        client.publish('tts_done', json.dumps({"status": "free"}))
 
         # Quit pygame
         pygame.quit()

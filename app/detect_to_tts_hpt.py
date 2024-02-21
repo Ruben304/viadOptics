@@ -4,28 +4,38 @@ import ast
 import math
 
 last_announced_label = None  # tracks the last announced label
-# label_queue = []  # queue for labels while TTS playback
+label_queue = []  # queue for labels while TTS playback
 
 
 def onConnect(client, userdata, flags, rc):
     print('Connected to MQTT broker')
     client.subscribe('detections')
-    # client.subscribe('tts-done')
+    client.subscribe('tts-done')
 
 
 # this is the base on receiving a regular MQTT and publishing a json
 def onMessage(client, userdata, msg: mqtt.MQTTMessage):
     try:
-        # getting content msg rdy to search
-        msgContent = msg.payload.decode()
-        msgList = ast.literal_eval(msgContent)
-        msgDict = ast.literal_eval(msgList[0])
-        print('Received dict:', msgDict)
+        topic = msg.topic  # topic of message being sent
+        label = ' '
+        status = ' '
+        msgDict = ' '
+        if topic == 'detections':
+            # getting content msg rdy to search
+            msgContent = msg.payload.decode()
+            msgList = ast.literal_eval(msgContent)
+            msgDict = ast.literal_eval(msgList[0])
+            print('Received detection:', msgDict)
+            label = msgDict.get('label', '').lower()
 
-        label = msgDict.get('label', '').lower()
-        if label:
+        elif topic == 'tts-done':
+            tts_done_message = json.loads(msg.payload.decode())  # Decode JSON payload
+            status = tts_done_message.get("status")  # Extract the "status" value
+            print('TTS completion message:', status)
+
+        if label or status:  # NEED TO FIX: is an issue
             # if msgDict.get('confidence') > 80:
-            process_label(label, msgDict, client)
+            process_label(label, msgDict, status, client)
 
     except json.JSONDecodeError as e:
         print('Error decoding JSON: ', e)
@@ -36,7 +46,7 @@ def onFail(client, userdata, flags, rc):
 
 
 # processing the information given to call helper functions
-def process_label(label, msgDict, client):
+def process_label(label, msgDict, status, client):
     global last_announced_label, label_queue
 
     # add confidence interval here to ensure extra filter
@@ -67,6 +77,21 @@ def process_label(label, msgDict, client):
     #         publish_message()
     #         last_announced_label = label
     #   elif label_queue is full:
+    #     publish_message to the next message in queue not the same as last_announced
+    #     last_announced_label = label
+    # ========================================
+    # if status != "busy" and not label_queue:
+    #    publish_message()
+    #    last_announced_label = label
+    # elif status != "busy" and len(label_queue) > 0:
+    #    publish_message to the next message in queue not the same as last_announced
+    #    last_announced_label = label
+    # elif status == "busy":
+    #   if not label_queue:
+    #       if last_announced_label != label:
+    #         publish_message()
+    #         last_announced_label = label
+    #   elif len(label_queue) > 0:
     #     publish_message to the next message in queue not the same as last_announced
     #     last_announced_label = label
 
