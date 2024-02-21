@@ -1,15 +1,16 @@
 import paho.mqtt.client as mqtt
 import json
 import ast
+import math
 
-
-HFOV = 128  # Horizontal field of view of the camera in degrees
-PWIDTH = 1280  # width of the camera's view in pixels
+last_announced_label = None  # tracks the last announced label
+# label_queue = []  # queue for labels while TTS playback
 
 
 def onConnect(client, userdata, flags, rc):
     print('Connected to MQTT broker')
     client.subscribe('detections')
+    # client.subscribe('tts-done')
 
 
 # this is the base on receiving a regular MQTT and publishing a json
@@ -34,42 +35,56 @@ def onFail(client, userdata, flags, rc):
     print('Failed to connect to MQTT broker')
 
 
+# processing the information given to call helper functions
 def process_label(label, msgDict, client):
-    if label == 'train':
-        xCord = msgDict.get('x')
-        zCord = msgDict.get('z')
-        degree = calculate_degree(xCord)
-        message, intensity = alert(label, degree, zCord)
-        # publish JSON messages
-        client.publish('hpt', json.dumps({'degree': degree, 'intensity': intensity}))
-        client.publish('tts', json.dumps({'message': message, 'degree': degree}))
-    elif label == 'car':
-        xCord = msgDict.get('x')
-        zCord = msgDict.get('z')
-        degree = calculate_degree(xCord)
-        message, intensity = alert(label, degree, zCord)
-        # publish JSON messages
-        client.publish('hpt', json.dumps({'degree': degree, 'intensity': intensity}))
-        client.publish('tts', json.dumps({'message': message}))
-    elif label == 'person':
-        xCord = msgDict.get('x')
-        zCord = msgDict.get('z')
-        degree = calculate_degree(xCord)
-        message, intensity = alert(label, degree, zCord)
-        # publish JSON messages
-        client.publish('hpt', json.dumps({'degree': degree, 'intensity': intensity}))
-        client.publish('tts', json.dumps({'message': message}))
-    # add all other map cases
+    global last_announced_label, label_queue
+
+    # add confidence interval here to ensure extra filter
+    # prep the message
+    xCord = msgDict.get('x')
+    zCord = msgDict.get('z')
+    degree = calculate_degree(xCord, zCord)
+    message, intensity = alert(label, degree, zCord)
+
+    # Check if the label is the same as the last announced
+    if label != last_announced_label:
+        # Announce the label if it's new
+        publish_message(label, degree, intensity, message, client)
+        last_announced_label = label  # Update the last announced label
+    else:  # if label != last and tts is free
+        last_announced_label = label
+
+    # ideally this is the logic:
+    # if tts is free and label_queue is empty:
+    #    publish_message()
+    #    last_announced_label = label
+    # elif tts is free and label_queue is full
+    #    publish_message to the next message in queue not the same as last_announced
+    #    last_announced_label = label
+    # elif tts is busy:
+    #   if label_queue is empty:
+    #       if last_announced_label != label:
+    #         publish_message()
+    #         last_announced_label = label
+    #   elif label_queue is full:
+    #     publish_message to the next message in queue not the same as last_announced
+    #     last_announced_label = label
 
 
-def calculate_degree(xCord, HFOV=HFOV, PWIDTH=PWIDTH):
-    angPerPix = PWIDTH/HFOV
-    degree = xCord * (angPerPix/2)
+def publish_message(label, degree, intensity, message, client):
+    # Logic to publish the message based on label specifics
+    client.publish('hpt', json.dumps({'degree': degree, 'intensity': intensity}))
+    client.publish('tts', json.dumps({'message': message}))
+
+
+# to find degree in respect to the camera
+def calculate_degree(xCord, zCord):
+    degree = math.atan(xCord/zCord)
     return degree
 
-def alert(obj, degree, zCord):
-    message = ''
-    intensity = 0
+
+# alerts and messages being sent out
+def alert(label, degree, zCord):
 
     if zCord < 304:  # 1 foot
         intensity = 100
@@ -77,15 +92,16 @@ def alert(obj, degree, zCord):
         intensity = 80
     elif 609 <= zCord < 1219:  # 2 to 4 feet
         intensity = 60
-    elif 1219 <= zCord < 1524:  # 4 to 5 feet
-        intensity = 40
+    else:  # 4 or more
+        intensity = 0
 
+    # make the messages shorter to its not that long for each message
     if degree < -60:
-        message = f"There is a {obj} {zCord} millimeters away from you on your left"
+        message = f"{label} {zCord} millimeters away on your left"
     elif degree > 60:
-        message = f"There is a {obj} {zCord} millimeters away from you on your right"
+        message = f"{label} {zCord} millimeters away on your right"
     else:
-        message = f"There is a {obj} {zCord} millimeters away in front of you"
+        message = f"{label} {zCord} millimeters away in front of you"
 
     return message, intensity
 

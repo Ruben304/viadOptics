@@ -7,17 +7,21 @@ import glob  # Used to find MP3 files in the folder
 
 previous_message = None  # Initialize a variable to store the previous message
 
+
 def delete_all_wav_files():
     wav_files = glob.glob("*.wav")
     for wav_file in wav_files:
         os.remove(wav_file)
 
+
 def onConnect(client, userdata, flags, rc):
     print('Connected to MQTT broker')
     client.subscribe('tts')
 
+
 def onFail(client, userdata, flags, rc):
     print('Failed to connect to MQTT broker')
+
 
 def onMessage(client, userdata, msg: mqtt.MQTTMessage):
     global previous_message  # Use the global variable to store the previous message
@@ -26,6 +30,7 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
     # Compare the current message with the previous one
     if messageJSON != previous_message:
         print('Received message:', messageJSON)
+        # client.publish('tts_done', json.dumps({"status": 'busy'}))
         previous_message = messageJSON  # Update the previous message with the new one
         message_text = messageJSON.get("message", "")
         tts = gTTS(text=message_text, lang = 'en')
@@ -44,6 +49,9 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
         # Wait for the audio to finish playing
         while pygame.mixer.get_busy():
             pygame.time.Clock().tick(10)
+
+        # alert the message is done
+        # client.publish('tts_done', json.dumps({"status": "done"}))
 
         # Quit pygame
         pygame.quit()
