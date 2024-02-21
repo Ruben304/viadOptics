@@ -3,7 +3,9 @@ import json
 import ast
 
 
-PWIDTH = 1400
+HFOV = 128  # Horizontal field of view of the camera in degrees
+PWIDTH = 1280  # width of the camera's view in pixels
+
 
 def onConnect(client, userdata, flags, rc):
     print('Connected to MQTT broker')
@@ -21,8 +23,8 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
 
         label = msgDict.get('label', '').lower()
         if label:
-            if msgDict.get('confidence') > 80:
-                process_label(label, msgDict, client)
+            # if msgDict.get('confidence') > 80:
+            process_label(label, msgDict, client)
 
     except json.JSONDecodeError as e:
         print('Error decoding JSON: ', e)
@@ -36,28 +38,34 @@ def process_label(label, msgDict, client):
     if label == 'train':
         xCord = msgDict.get('x')
         zCord = msgDict.get('z')
-        degree = (xCord / PWIDTH) * 180
+        degree = calculate_degree(xCord)
         message, intensity = alert(label, degree, zCord)
         # publish JSON messages
         client.publish('hpt', json.dumps({'degree': degree, 'intensity': intensity}))
-        client.publish('tts', json.dumps({'message': message}))
+        client.publish('tts', json.dumps({'message': message, 'degree': degree}))
     elif label == 'car':
         xCord = msgDict.get('x')
         zCord = msgDict.get('z')
-        degree = (xCord / PWIDTH) * 180
+        degree = calculate_degree(xCord)
         message, intensity = alert(label, degree, zCord)
         # publish JSON messages
         client.publish('hpt', json.dumps({'degree': degree, 'intensity': intensity}))
         client.publish('tts', json.dumps({'message': message}))
-    if label == 'person':
+    elif label == 'person':
         xCord = msgDict.get('x')
         zCord = msgDict.get('z')
-        degree = (xCord / PWIDTH) * 180
+        degree = calculate_degree(xCord)
         message, intensity = alert(label, degree, zCord)
         # publish JSON messages
         client.publish('hpt', json.dumps({'degree': degree, 'intensity': intensity}))
         client.publish('tts', json.dumps({'message': message}))
     # add all other map cases
+
+
+def calculate_degree(xCord, HFOV=HFOV, PWIDTH=PWIDTH):
+    angPerPix = PWIDTH/HFOV
+    degree = xCord * (angPerPix/2)
+    return degree
 
 def alert(obj, degree, zCord):
     message = ''
@@ -72,12 +80,12 @@ def alert(obj, degree, zCord):
     elif 1219 <= zCord < 1524:  # 4 to 5 feet
         intensity = 40
 
-    if degree < 60:
-        message = f"There is a {obj} {zCord} meters away from you on your left"
-    elif degree > 120:
-        message = f"There is a {obj} {zCord} meters away from you on your right"
+    if degree < -60:
+        message = f"There is a {obj} {zCord} millimeters away from you on your left"
+    elif degree > 60:
+        message = f"There is a {obj} {zCord} millimeters away from you on your right"
     else:
-        message = f"There is a {obj} {zCord} meters away in front of you"
+        message = f"There is a {obj} {zCord} millimeters away in front of you"
 
     return message, intensity
 
