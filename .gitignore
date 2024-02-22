@@ -2,3 +2,4 @@ viad/*
 viadApp/*
 venv/*
 *.DS_STORE*
+.idea/*
