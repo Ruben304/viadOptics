@@ -6,6 +6,9 @@ import math
 last_announced_label = None  # tracks the last announced label
 label_queue = []  # queue for labels while TTS playback
 
+last_msgDict = None  # stores last msg dictionary
+last_status = "free"  # status of the tts starts as free
+
 
 def onConnect(client, userdata, flags, rc):
     print('Connected to MQTT broker')
@@ -15,27 +18,34 @@ def onConnect(client, userdata, flags, rc):
 
 # this is the base on receiving a regular MQTT and publishing a json
 def onMessage(client, userdata, msg: mqtt.MQTTMessage):
+    global last_msgDict, last_status
+
     try:
         topic = msg.topic  # topic of message being sent
-        label = ' '
-        status = ' '
-        msgDict = ' '
+
         if topic == 'detections':
-            # getting content msg rdy to search
+            # getting content msg rdy for variable get
             msgContent = msg.payload.decode()
             msgList = ast.literal_eval(msgContent)
             msgDict = ast.literal_eval(msgList[0])
             print('Received detection:', msgDict)
-            label = msgDict.get('label', '').lower()
+
+            # check if there is a new msg dictionary
+            if msgDict != last_msgDict:
+                print('Received new detection:', msgDict)
+                last_msgDict = msgDict
+                process_label(msgDict, last_status, client)
 
         elif topic == 'tts-done':
-            tts_done_message = json.loads(msg.payload.decode())  # Decode JSON payload
-            status = tts_done_message.get("status")  # Extract the "status" value
-            print('TTS completion message:', status)
+            # get the status of tts
+            tts_done_message = json.loads(msg.payload.decode())
+            status = tts_done_message.get("status")
 
-        if label or status:  # NEED TO FIX: is an issue
-            # if msgDict.get('confidence') > 80:
-            process_label(label, msgDict, status, client)
+            if status != last_status:
+                # update the new status of tts with old Dict to prevent multiple detections of same obj
+                print('TTS status update:', status)
+                last_status = status
+                process_label(last_msgDict, last_status, client)
 
     except json.JSONDecodeError as e:
         print('Error decoding JSON: ', e)
@@ -46,66 +56,51 @@ def onFail(client, userdata, flags, rc):
 
 
 # processing the information given to call helper functions
-def process_label(label, msgDict, status, client):
+def process_label(msgDict, status, client):
     global last_announced_label, label_queue
 
     # add confidence interval here to ensure extra filter
     # prep the message
+    label = msgDict.get('label', '').lower()
     xCord = msgDict.get('x')
     zCord = msgDict.get('z')
     degree = calculate_degree(xCord, zCord)
     message, intensity = alert(label, degree, zCord)
 
-    # Check if the label is the same as the last announced
-    if label != last_announced_label:
-        # Announce the label if it's new
-        publish_message(label, degree, intensity, message, client)
-        last_announced_label = label  # Update the last announced label
-    else:  # if label != last and tts is free
-        last_announced_label = label
+    # create object for the queue for easier publish message
+    detection = {'label': label, 'degree': degree, 'intensity': intensity, 'message': message}
 
-    # ideally this is the logic:
-    # if tts is free and label_queue is empty:
-    #    publish_message()
-    #    last_announced_label = label
-    # elif tts is free and label_queue is full
-    #    publish_message to the next message in queue not the same as last_announced
-    #    last_announced_label = label
-    # elif tts is busy:
-    #   if label_queue is empty:
-    #       if last_announced_label != label:
-    #         publish_message()
-    #         last_announced_label = label
-    #   elif label_queue is full:
-    #     publish_message to the next message in queue not the same as last_announced
-    #     last_announced_label = label
-    # ========================================
-    # if status != "busy" and not label_queue:
-    #    publish_message()
-    #    last_announced_label = label
-    # elif status != "busy" and len(label_queue) > 0:
-    #    publish_message to the next message in queue not the same as last_announced
-    #    last_announced_label = label
-    # elif status == "busy":
-    #   if not label_queue:
-    #       if last_announced_label != label:
-    #         publish_message()
-    #         last_announced_label = label
-    #   elif len(label_queue) > 0:
-    #     publish_message to the next message in queue not the same as last_announced
-    #     last_announced_label = label
+    if status == "busy":
+        # add to queue if it's not the same as the last announced label or if the queue is empty
+        if not label_queue or label_queue[-1]['label'] != label:
+            label_queue.append(detection)
+    else:  # if status is free, check the queue first
+        if label_queue:
+            # if there is something in queue then add first in queue to detect
+            # logic to make sure it is not a repeat is already done
+            next_detection = label_queue.pop(0)
+            publish_message(next_detection, client)
+            last_announced_label = next_detection['label']
+        elif last_announced_label != label:
+            # if queue is empty and label is new, publish immediately
+            publish_message(detection, client)
+            last_announced_label = label
 
 
-def publish_message(label, degree, intensity, message, client):
-    # Logic to publish the message based on label specifics
-    client.publish('hpt', json.dumps({'degree': degree, 'intensity': intensity}))
-    client.publish('tts', json.dumps({'message': message}))
+def publish_message(detection, client):
+    # publish message with label info
+    client.publish('hpt', json.dumps({'degree': detection['degree'], 'intensity': detection['intensity']}))
+    client.publish('tts', json.dumps({'message': detection['message']}))
+    print(f"Published: {detection['message']}")
 
 
 # to find degree in respect to the camera
 def calculate_degree(xCord, zCord):
-    degree = math.atan(xCord/zCord)
-    return degree
+    if zCord == 0:
+        zCord = 1
+    radianAng = math.atan(xCord/zCord)
+    degreeAng = math.degrees(radianAng)
+    return degreeAng
 
 
 # alerts and messages being sent out
