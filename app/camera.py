@@ -8,51 +8,14 @@ import numpy as np
 import time
 import paho.mqtt.client as mqtt
 
-nnBlobPath = str((Path(__file__).parent / Path('5n_v1.blob')).resolve().absolute())
+nnBlobPath = str((Path(__file__).parent / Path('besttt_openvino_2022.1_6shave.blob')).resolve().absolute())
 
 if not Path(nnBlobPath).exists():
     import sys
     raise FileNotFoundError(f'Required file/s not found, please run "{sys.executable} install_requirements.py"')
 
 # Label Maps
-labelMap = [
-    "Bus",
-    "Bushes",
-    "Person",
-    "Truck",
-    "backpack",
-    "bench",
-    "bicycle",
-    "boat",
-    "branch",
-    "car",
-    "chair",
-    "clock",
-    "crosswalk",
-    "door",
-    "elevator",
-    "fire_hydrant",
-    "green_light",
-    "gun",
-    "handbag",
-    "motorcycle",
-    "person",
-    "pothole",
-    "rat",
-    "red_light",
-    "scooter",
-    "sheep",
-    "stairs",
-    "stop_sign",
-    "suitcase",
-    "traffic light",
-    "traffic_cone",
-    "train",
-    "tree",
-    "truck",
-    "umbrella",
-    "yellow_light"
-]
+labelMap = ["bench",    "bicycle",    "branch",    "bus",    "bush",    "car",    "chair",    "crosswalk",    "door",    "elevator",    "fire_hydrant",    "green_light",    "gun",    "motorcycle",    "person",    "pothole",    "rat",    "red_light",    "scooter",    "stairs",    "stop_sign",    "stop_walking_signal",    "table",    "traffic_cone",    "train",    "tree",    "truck",    "umbrella",    "walking_man_signal",    "yellow_light"]
 
 syncNN = True
 
@@ -119,10 +82,10 @@ spatialDetectionNetwork.setDepthLowerThreshold(100)
 spatialDetectionNetwork.setDepthUpperThreshold(5000)
 
 # Yolo specific parameters
-spatialDetectionNetwork.setNumClasses(36) # ------------------------------change the number of classes based on label list
+spatialDetectionNetwork.setNumClasses(30) # ------------------------------change the number of classes based on label list
 spatialDetectionNetwork.setCoordinateSize(4)
 spatialDetectionNetwork.setAnchors([10,14, 23,27, 37,58, 81,82, 135,169, 344,319])
-spatialDetectionNetwork.setAnchorMasks({ "side26": [1,2,3], "side13": [3,4,5] })
+spatialDetectionNetwork.setAnchorMasks({ "side26": [1,2,3], "side13": [3,4,5], "side52": [5, 6, 7]}) # i guess
 spatialDetectionNetwork.setIouThreshold(0.5)
 
 # Linking
