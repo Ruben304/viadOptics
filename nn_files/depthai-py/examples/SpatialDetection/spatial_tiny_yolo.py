@@ -9,11 +9,6 @@ import time
 import paho.mqtt.client as mqtt
 
 nnBlobPath = str((Path(__file__).parent / Path('../models/5n_v1.blob')).resolve().absolute())
-# if 1 < len(sys.argv):
-#     arg = sys.argv[1]
-#     nnBlobPath = str((Path(__file__).parent / Path('../models/5n_v1.blob')).resolve().absolute())
-# else:
-#     print("Using Tiny YoloV5n model, and it could not open blob'")
 
 if not Path(nnBlobPath).exists():
     import sys
