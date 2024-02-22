@@ -22,7 +22,7 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
 
     try:
         topic = msg.topic  # topic of message being sent
-
+        print("msg topic:",topic)
         if topic == 'detections':
             # getting content msg rdy for variable get
             msgContent = msg.payload.decode()
@@ -64,27 +64,29 @@ def process_label(msgDict, status, client):
     label = msgDict.get('label', '').lower()
     xCord = msgDict.get('x')
     zCord = msgDict.get('z')
+    confidence = msgDict.get('confidence')
     degree = calculate_degree(xCord, zCord)
     message, intensity = alert(label, degree, zCord)
 
     # create object for the queue for easier publish message
     detection = {'label': label, 'degree': degree, 'intensity': intensity, 'message': message}
 
-    if status == "busy":
-        # add to queue if it's not the same as the last announced label or if the queue is empty
-        if not label_queue or label_queue[-1]['label'] != label:
-            label_queue.append(detection)
-    else:  # if status is free, check the queue first
-        if label_queue:
-            # if there is something in queue then add first in queue to detect
-            # logic to make sure it is not a repeat is already done
-            next_detection = label_queue.pop(0)
-            publish_message(next_detection, client)
-            last_announced_label = next_detection['label']
-        elif last_announced_label != label:
-            # if queue is empty and label is new, publish immediately
-            publish_message(detection, client)
-            last_announced_label = label
+    if confidence > 0.6:
+        if status == "busy":
+            # add to queue if it's not the same as the last announced label or if the queue is empty
+            if not label_queue or label_queue[-1]['label'] != label:
+                label_queue.append(detection)
+        else:  # if status is free, check the queue first
+            if label_queue:
+                # if there is something in queue then add first in queue to detect
+                # logic to make sure it is not a repeat is already done
+                next_detection = label_queue.pop(0)
+                publish_message(next_detection, client)
+                last_announced_label = next_detection['label']
+            elif last_announced_label != label:
+                # if queue is empty and label is new, publish immediately
+                publish_message(detection, client)
+                last_announced_label = label
 
 
 def publish_message(detection, client):
@@ -115,13 +117,24 @@ def alert(label, degree, zCord):
     else:  # 4 or more
         intensity = 0
 
+    zMeters = math.ceil(zCord/1000)
+
     # make the messages shorter to its not that long for each message
     if degree < -60:
-        message = f"{label} {zCord} millimeters away on your left"
+        if zMeters == 1:
+            message = f"{label} {zMeters} meter to your left"
+        else:
+            message = f"{label} {zMeters} meters to your left"
     elif degree > 60:
-        message = f"{label} {zCord} millimeters away on your right"
+        if zMeters == 1:
+            message = f"{label} {zMeters} meter to your right"
+        else:
+            message = f"{label} {zMeters} meters to your right"
     else:
-        message = f"{label} {zCord} millimeters away in front of you"
+        if zMeters == 1:
+            message = f"{label} {zMeters} meter ahead"
+        else:
+            message = f"{label} {zMeters} meters ahead"
 
     return message, intensity
 

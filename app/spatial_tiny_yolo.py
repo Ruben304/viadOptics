@@ -143,16 +143,16 @@ spatialDetectionNetwork.outNetwork.link(nnNetworkOut.input)
 sysLog.out.link(sysLogOut.input)
 
 # MQTT Initialize
-# import paho.mqtt.client as mqtt
-# def onConnect(client, userdata, flags, rc):
-#     print('Connected to MQTT Broker')
-# def onPublish(client, userdata, mid):
-#     print('Published MQTT message:', mid)
+import paho.mqtt.client as mqtt
+def onConnect(client, userdata, flags, rc):
+    print('Connected to MQTT Broker')
+def onPublish(client, userdata, mid):
+    print('Published MQTT message:', mid)
 
-# client = mqtt.Client()
-# client.on_connect = onConnect
-# # client.on_publish = onPublish
-# client.connect('localhost')
+client = mqtt.Client()
+client.on_connect = onConnect
+client.on_publish = onPublish
+client.connect('localhost')
 
 # Connect to device and start pipeline
 with dai.Device(pipeline) as device:
@@ -207,7 +207,7 @@ with dai.Device(pipeline) as device:
 
         # If the frame is available, draw bounding boxes on it and show the frame
         height = frame.shape[0]
-        width  = frame.shape[1]
+        width = frame.shape[1]
         detectionMessages = []
         for detection in detections:
             # have to cast detection to SpatialImgDetection to access spatial coordinates
@@ -255,7 +255,7 @@ with dai.Device(pipeline) as device:
         numDetections = len(detectionMessages)
         if numDetections > 0:
             print(time.time(), 'There was', numDetections, 'detections in this message')
-            # client.publish('detections', str(detectionMessages))
+            client.publish('detections', str(detectionMessages))
 
         if not sysInfo == None:
             printSystemInformation(sysInfo)
