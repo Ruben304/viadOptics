@@ -22,17 +22,13 @@ if ! command -v virtualenv &> /dev/null; then
     echo "Installing virtualenv..."
     sudo pip3 install virtualenv
 
-    virtualenv venv # creates a virtual environment to avoid messing with system packages such as python packages
+    virtualenv viad # creates a virtual environment to avoid messing with system packages such as python packages
     
-    source venv/bin/activate # starts the virtual environment
+    source viad/bin/activate # starts the virtual environment
 fi
 
-# Run the script to install Python requirements
-# Make sure install_requirements.py is good for ARM compatable
-python3 install_requirements.py
-
 # Upgrade pip within the virtual environment
-pip install --upgrade pip
-
+python3 -m pip install -U pip
+python3 -m pip install --extra-index-url https://artifacts.luxonis.com/artifactory/luxonis-python-snapshot-local/ -r requirements.txt
 # deactivate env if needed
 # deactivate
