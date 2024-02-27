@@ -32,6 +32,7 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
         print('Received message:', messageJSON)
         previous_message = messageJSON  # Update the previous message with the new one
         message_text = messageJSON.get("message", "")
+        message_text = message_text.replace("_", " ")
         tts = gTTS(text=message_text, lang = 'en')
         wav_file = "myText.wav"
         tts.save(wav_file)
