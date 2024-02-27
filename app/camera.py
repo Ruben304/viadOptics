@@ -6,9 +6,10 @@ import cv2
 import depthai as dai
 import numpy as np
 import time
+
 import paho.mqtt.client as mqtt
 
-nnBlobPath = str((Path(__file__).parent / Path('besttt_openvino_2022.1_6shave.blob')).resolve().absolute())
+nnBlobPath = str((Path(__file__).parent / Path('YoloV5_Testing.blob')).resolve().absolute())
 
 if not Path(nnBlobPath).exists():
     import sys
