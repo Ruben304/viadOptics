@@ -30,10 +30,11 @@ Our device harnesses the capabilities of LIDAR sensors and advanced machine lear
 - Mosquitto MQTT to message between python scripts
 
 ## Materials Used
-- [Luxonis OAK-D Pro W]() (OV9782 Image Sensor) Camera & Sensors
-- Raspberry Pi Zero 2 W
-- Haptic Motor: 
-- Camera Batteries : 
+- Camera & Sensors: Luxonis OAK-D Pro W (OV9782 Image Sensor)
+- Microcontroller: Raspberry Pi Zero 2 W
+- Haptic Motor: Adafruit Vibrating Mini Motor Disc
 - Speakers: SC400408-2u
+- Amplifier Module: Comimack TDA 1308 Stereo Headphone Amplifier
+- Power Supply: Xiaomi Mi Power Bank 3 Ultra Compact
 - SLA 3D Printed Resin Frames & Enclosure
 
