@@ -3,7 +3,7 @@
 ## Collaborators 
 - Jose Battle
 - Ruben F. Carbajal
-- Leanorine Lorenzano
+- Leanorine Lorenzana-Garcia
 - Zachary Dion Tan
 - Axel S. Toro Vega
 ## VIAD Mission & Solution
