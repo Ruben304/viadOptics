@@ -20,7 +20,13 @@ if not Path(nnBlobPath).exists():
     raise FileNotFoundError(f'Required file/s not found, please run "{sys.executable} install_requirements.py"')
 
 # Label Maps
-labelMap = ["bench",    "bicycle",    "branch",    "bus",    "bush",    "car",    "chair",    "crosswalk",    "door",    "elevator",    "fire_hydrant",    "green_light",    "gun",    "motorcycle",    "person",    "pothole",    "rat",    "red_light",    "scooter",    "stairs",    "stop_sign",    "stop_walking_signal",    "table",    "traffic_cone",    "train",    "tree",    "truck",    "umbrella",    "walking_man_signal",    "yellow_light"]
+labelMap = ["bench",    "bicycle",    "branch",    "bus",    "bush",
+            "car",    "chair",    "crosswalk",    "door",    "elevator",
+            "fire_hydrant",    "green_light",    "gun",    "motorcycle",
+            "person",    "pothole",    "rat",    "red_light",    "scooter",
+            "stairs",    "stop_sign",    "stop_walking_signal",    "table",
+            "traffic_cone",    "train",    "tree",    "truck",
+            "umbrella", "walking_man_signal",    "yellow_light"]
 
 syncNN = True
 
