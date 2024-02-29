@@ -9,7 +9,11 @@ import time
 
 import paho.mqtt.client as mqtt
 
-nnBlobPath = str((Path(__file__).parent / Path('YoloV5_Testing.blob')).resolve().absolute())
+nnBlobPath = str((Path(__file__).parent / Path('YoloV5_Testing_V2.blob')).resolve().absolute())
+
+# Depracated
+#nnBlobPath = str((Path(__file__).parent / Path('5n_v1.blob')).resolve().absolute())
+#nnBlobPath = str((Path(__file__).parent / Path('YoloV5_Testing.blob')).resolve().absolute())
 
 if not Path(nnBlobPath).exists():
     import sys
@@ -85,8 +89,8 @@ spatialDetectionNetwork.setDepthUpperThreshold(5000)
 # Yolo specific parameters
 spatialDetectionNetwork.setNumClasses(30) # ------------------------------change the number of classes based on label list
 spatialDetectionNetwork.setCoordinateSize(4)
-spatialDetectionNetwork.setAnchors([10,14, 23,27, 37,58, 81,82, 135,169, 344,319])
-spatialDetectionNetwork.setAnchorMasks({ "side26": [1,2,3], "side13": [3,4,5], "side52": [5, 6, 7]}) # i guess
+spatialDetectionNetwork.setAnchors([10, 13, 16, 30, 33, 23, 30, 61, 62, 45, 59, 119, 116, 90, 156, 198, 373, 326] )
+spatialDetectionNetwork.setAnchorMasks({ "side52": [0,1,2], "side26": [3,4,5], "side13": [6,7,8]})
 spatialDetectionNetwork.setIouThreshold(0.5)
 
 # Linking

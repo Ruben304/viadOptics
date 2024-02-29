@@ -12,7 +12,8 @@ last_status = "free"  # status of the tts starts as free
 labelMap = ["bench",    "bicycle",    "branch",    "bus",    "bush",    "car",    "chair",    "crosswalk",    "door",    "elevator",    "fire_hydrant",    "green_light",    "gun",    "motorcycle",    "person",    "pothole",    "rat",    "red_light",    "scooter",    "stairs",    "stop_sign",    "stop_walking_signal",    "table",    "traffic_cone",    "train",    "tree",    "truck",    "umbrella",    "walking_man_signal",    "yellow_light"]
 labelDic = {} # Store dictionary of z-distance for each label
 for label in labelMap:
-    labelDic[label] = None #initialize to None during setup
+    labelDic[label] = {"count": 0, "total": []} #initialize to None during setup
+mov_ave_count = 5
 
 def onConnect(client, userdata, flags, rc):
     print('Connected to MQTT broker')
@@ -61,7 +62,7 @@ def onFail(client, userdata, flags, rc):
 
 # processing the information given to call helper functions
 def process_label(msgDict, status, client):
-    global last_announced_label, label_queue
+    global last_announced_label, label_queue, labelDic, mov_ave_count
 
     # add confidence interval here to ensure extra filter
     # prep the message
@@ -76,27 +77,23 @@ def process_label(msgDict, status, client):
     detection = {'label': label, 'degree': degree, 'intensity': intensity, 'message': message}
 
     if confidence > 0.6:
-        '''
-        if status == "busy":
-            #If label_queue is empty or label has not been anounced yet (as checked by if labelDic is None)
-            if not label_queue or labelDic[label] == None:
-                label_queue.append(detection)
-            elif math.abs(math.ceil(zCord/1000)-labelDic[label]) > 1:
-                publish_message(detection, client)
-                labelDic[label] = zCord
+        if labelDic[label]["count"] < mov_ave_count:
+            labelDic[label]["total"].append(math.ceil(zCord/1000))
+            labelDic[label]["count"] = labelDic[label]["count"] + 1
         else:
-            if label_queue: # If label_queue has contents
-                publish_message(label_queue.pop(0), client)
-                #labelDic[label] = zCord
-            elif labelDic[label] == None: # if label_queue empty and label has never been anounced
-                publish_message(detection, client)
-                labelDic[label] = zCord # store z-coordinate of label
-            # If current z-coord is >± 1m of previous label then announce (label has moved relative to user)
-            elif math.abs(math.ceil(zCord/1000)-labelDic[label]) > 1:
-                publish_message(detection, client)
-                labelDic[label] = zCord
-        '''
+            labelDic[label]["total"].pop(0)
+            labelDic[label]["total"].append(math.ceil(zCord/1000))
 
+        if math.fabs(sum(labelDic[label]["total"]) / labelDic[label]["count"] - math.ceil(zCord/1000)) > 2 or labelDic[label]["count"] == 1:
+            if status == "busy":
+                label_queue.append(detection)
+            else:
+                if label_queue:
+                    publish_message(label_queue.pop(0), client)
+                else:
+                    publish_message(detection, client)
+
+        '''
         if status == "busy":
             # add to queue if it's not the same as the last announced label or if the queue is empty
             if not label_queue or label_queue[-1]['label'] != label:
@@ -112,6 +109,7 @@ def process_label(msgDict, status, client):
                 # if queue is empty and label is new, publish immediately
                 publish_message(detection, client)
                 last_announced_label = label
+        '''
 
 
 def publish_message(detection, client):
