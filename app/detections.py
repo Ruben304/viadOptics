@@ -18,8 +18,8 @@ labelMap = ["bench",    "bicycle",    "branch",    "bus",    "bush",
             "umbrella",    "walking_man_signal",    "yellow_light"]
 labelDic = {} # Store dictionary of z-distance for each label
 for label in labelMap:
-    labelDic[label] = {"count": 0, "total": []} #initialize to None during setup
-mov_ave_count = 5
+    labelDic[label] = {"count": 0, "total": []} # 'count' is total number of entries in total, 'total' stores distances
+mov_ave_count = 5 # initialize moving average count
 
 def onConnect(client, userdata, flags, rc):
     print('Connected to MQTT broker')
@@ -82,21 +82,22 @@ def process_label(msgDict, status, client):
     # create object for the queue for easier publish message
     detection = {'label': label, 'degree': degree, 'intensity': intensity, 'message': message}
 
-    if confidence > 0.6:
-        if labelDic[label]["count"] < mov_ave_count:
-            labelDic[label]["total"].append(math.ceil(zCord/1000))
-            labelDic[label]["count"] = labelDic[label]["count"] + 1
-        else:
-            labelDic[label]["total"].pop(0)
-            labelDic[label]["total"].append(math.ceil(zCord/1000))
+    if confidence > 0.6: # activate only if confidence is greater than 0.6
+        if labelDic[label]["count"] < mov_ave_count: # if current label's count is less than the moving count
+            labelDic[label]["total"].append(math.ceil(zCord/1000)) # add rounded up meters to total
+            labelDic[label]["count"] = labelDic[label]["count"] + 1 # increment count
+        else: #if current label's count is equal to the moving average count
+            labelDic[label]["total"].pop(0) # remove oldest z distance entry
+            labelDic[label]["total"].append(math.ceil(zCord/1000)) # add new z distance entry
 
+        # if first time seeing object OR moving average and z distance difference is greater than 2
         if math.fabs(sum(labelDic[label]["total"]) / labelDic[label]["count"] - math.ceil(zCord/1000)) > 2 or labelDic[label]["count"] == 1:
-            if status == "busy":
-                label_queue.append(detection)
-            else:
-                if label_queue:
+            if status == "busy": # if tts is currently busy
+                label_queue.append(detection) # add to queue
+            else: # if not busy
+                if label_queue: # if there is a queue then pop
                     publish_message(label_queue.pop(0), client)
-                else:
+                else: # if no queue then publish directly
                     publish_message(detection, client)
 
         '''
