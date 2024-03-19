@@ -37,4 +37,5 @@ Our device harnesses the capabilities of LIDAR sensors and advanced machine lear
 - Amplifier Module: Comimack TDA 1308 Stereo Headphone Amplifier
 - Power Supply: Xiaomi Mi Power Bank 3 Ultra Compact
 - Frames: Form labs tough 2000 resin
+- Volume Knob: Potentiometer
 
