@@ -9,7 +9,8 @@ import time
 
 import paho.mqtt.client as mqtt
 
-nnBlobPath = str((Path(__file__).parent / Path('YoloV5_Testing_V2.blob')).resolve().absolute())
+#nnBlobPath = str((Path(__file__).parent / Path('YoloV5_Testing_V2.blob')).resolve().absolute())
+nnBlobPath = str((Path(__file__).parent / Path('5n_500epoch.blob')).resolve().absolute())
 
 # Depracated
 #nnBlobPath = str((Path(__file__).parent / Path('5n_v1.blob')).resolve().absolute())
