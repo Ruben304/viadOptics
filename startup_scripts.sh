@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# get the mqtt
+# mosquitto installed on setup_environment
 
 
 # Start the Python scripts
