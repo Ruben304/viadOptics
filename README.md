@@ -33,7 +33,7 @@ Our device harnesses the capabilities of LIDAR sensors and advanced machine lear
 - Camera & Sensors: Luxonis OAK-D Pro W (OV9782 Image Sensor)
 - Microcontroller: Raspberry Pi Zero 2 W
 - Haptic Motor: Adafruit Vibrating Mini Motor Disc
-- Speakers: SC400408-2u
+- Speakers: SM150508-7
 - Amplifier Module: Comimack TDA 1308 Stereo Headphone Amplifier
 - Power Supply: Xiaomi Mi Power Bank 3 Ultra Compact
 - Frames: Form labs tough 2000 resin
