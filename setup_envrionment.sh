@@ -17,6 +17,15 @@ if ! command -v pip3 &> /dev/null; then # same as python
     sudo apt-get install -y python3-pip
 fi
 
+# Check for and install Mosquitto MQTT Broker
+if ! command -v mosquitto &> /dev/null; then
+    echo "Installing Mosquitto MQTT Broker..."
+    sudo apt-get install -y mosquitto mosquitto-clients
+    # Enable Mosquitto to start on boot
+    sudo systemctl enable mosquitto.service
+fi
+
+
 # Optionally, check for virtualenv and install if it's not present (pip3)
 if ! command -v virtualenv &> /dev/null; then
     echo "Installing virtualenv..."
