@@ -4,6 +4,6 @@
 sudo systemctl status mosquitto
 
 # Start the Python scripts
-python app/camera.py &
-python app/detections.py &
-python app/tts.py &
+python3 app/camera.py &
+python3 app/detections.py &
+python3 app/tts.py &
