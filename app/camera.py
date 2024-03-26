@@ -7,15 +7,10 @@ import depthai as dai
 import numpy as np
 import time
 import platform # used to check if running on raspberry pi
-
 import paho.mqtt.client as mqtt
 
 #nnBlobPath = str((Path(__file__).parent / Path('YoloV5_Testing_V2.blob')).resolve().absolute())
 nnBlobPath = str((Path(__file__).parent / Path('5n_500epoch.blob')).resolve().absolute())
-
-# Depracated
-#nnBlobPath = str((Path(__file__).parent / Path('5n_v1.blob')).resolve().absolute())
-#nnBlobPath = str((Path(__file__).parent / Path('YoloV5_Testing.blob')).resolve().absolute())
 
 if not Path(nnBlobPath).exists():
     import sys
@@ -44,82 +39,100 @@ def printSystemInformation(info):
     print(f"Cpu usage - Leon CSS: {info.leonCssCpuUsage.average * 100:.2f}%, Leon MSS: {info.leonMssCpuUsage.average * 100:.2f} %")
     print("----------------------------------------")
 
-# Create pipeline
-pipeline = dai.Pipeline()
 
-# Define sources and outputs
-camRgb = pipeline.create(dai.node.ColorCamera)
-spatialDetectionNetwork = pipeline.create(dai.node.YoloSpatialDetectionNetwork)
-monoLeft = pipeline.create(dai.node.MonoCamera)
-monoRight = pipeline.create(dai.node.MonoCamera)
-stereo = pipeline.create(dai.node.StereoDepth)
-sysLog = pipeline.create(dai.node.SystemLogger)
-sysLogOut = pipeline.create(dai.node.XLinkOut)
-nnNetworkOut = pipeline.create(dai.node.XLinkOut)
+# Initialize camera and pipeline
+def initialize_camera():
+    # Create pipeline
+    pipeline = dai.Pipeline()
 
-xoutRgb = pipeline.create(dai.node.XLinkOut)
-xoutNN = pipeline.create(dai.node.XLinkOut)
-xoutDepth = pipeline.create(dai.node.XLinkOut)
+    # Define sources and outputs
+    camRgb = pipeline.create(dai.node.ColorCamera)
+    spatialDetectionNetwork = pipeline.create(dai.node.YoloSpatialDetectionNetwork)
+    monoLeft = pipeline.create(dai.node.MonoCamera)
+    monoRight = pipeline.create(dai.node.MonoCamera)
+    stereo = pipeline.create(dai.node.StereoDepth)
+    sysLog = pipeline.create(dai.node.SystemLogger)
+    sysLogOut = pipeline.create(dai.node.XLinkOut)
+    nnNetworkOut = pipeline.create(dai.node.XLinkOut)
 
-sysLogOut.setStreamName("sysinfo")
-xoutRgb.setStreamName("rgb")
-xoutNN.setStreamName("detections")
-xoutDepth.setStreamName("depth")
-nnNetworkOut.setStreamName("nnNetwork")
+    xoutRgb = pipeline.create(dai.node.XLinkOut)
+    xoutNN = pipeline.create(dai.node.XLinkOut)
+    xoutDepth = pipeline.create(dai.node.XLinkOut)
 
-# Properties
-camRgb.setPreviewSize(416, 416)
-camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
-camRgb.setInterleaved(False)
-camRgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.BGR)
+    sysLogOut.setStreamName("sysinfo")
+    xoutRgb.setStreamName("rgb")
+    xoutNN.setStreamName("detections")
+    xoutDepth.setStreamName("depth")
+    nnNetworkOut.setStreamName("nnNetwork")
 
-monoLeft.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
-monoLeft.setCamera("left")
-monoRight.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
-monoRight.setCamera("right")
+    # Properties
+    camRgb.setPreviewSize(416, 416)
+    camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
+    camRgb.setInterleaved(False)
+    camRgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.BGR)
 
-sysLog.setRate(1)  # 1 Hz
+    monoLeft.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
+    monoLeft.setCamera("left")
+    monoRight.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
+    monoRight.setCamera("right")
 
-# setting node configs
-stereo.setDefaultProfilePreset(dai.node.StereoDepth.PresetMode.HIGH_DENSITY)
-# Align depth map to the perspective of RGB camera, on which inference is done
-stereo.setDepthAlign(dai.CameraBoardSocket.CAM_A)
-stereo.setOutputSize(monoLeft.getResolutionWidth(), monoLeft.getResolutionHeight())
-stereo.setSubpixel(True)
+    sysLog.setRate(1)  # 1 Hz
 
-spatialDetectionNetwork.setBlobPath(nnBlobPath)
-spatialDetectionNetwork.setConfidenceThreshold(0.5)
-spatialDetectionNetwork.input.setBlocking(False)
-spatialDetectionNetwork.setBoundingBoxScaleFactor(0.5)
-spatialDetectionNetwork.setDepthLowerThreshold(100)
-spatialDetectionNetwork.setDepthUpperThreshold(5000)
+    # setting node configs
+    stereo.setDefaultProfilePreset(dai.node.StereoDepth.PresetMode.HIGH_DENSITY)
+    # Align depth map to the perspective of RGB camera, on which inference is done
+    stereo.setDepthAlign(dai.CameraBoardSocket.CAM_A)
+    stereo.setOutputSize(monoLeft.getResolutionWidth(), monoLeft.getResolutionHeight())
+    stereo.setSubpixel(True)
 
-# Yolo specific parameters
-spatialDetectionNetwork.setNumClasses(30) # ------------------------------change the number of classes based on label list
-spatialDetectionNetwork.setCoordinateSize(4)
-spatialDetectionNetwork.setAnchors([10, 13, 16, 30, 33, 23, 30, 61, 62, 45, 59, 119, 116, 90, 156, 198, 373, 326] )
-spatialDetectionNetwork.setAnchorMasks({ "side52": [0,1,2], "side26": [3,4,5], "side13": [6,7,8]})
-spatialDetectionNetwork.setIouThreshold(0.5)
+    spatialDetectionNetwork.setBlobPath(nnBlobPath)
+    spatialDetectionNetwork.setConfidenceThreshold(0.5)
+    spatialDetectionNetwork.input.setBlocking(False)
+    spatialDetectionNetwork.setBoundingBoxScaleFactor(0.5)
+    spatialDetectionNetwork.setDepthLowerThreshold(100)
+    spatialDetectionNetwork.setDepthUpperThreshold(5000)
 
-# Linking
-monoLeft.out.link(stereo.left)
-monoRight.out.link(stereo.right)
+    # Yolo specific parameters
+    spatialDetectionNetwork.setNumClasses(30) # ------------------------------change the number of classes based on label list
+    spatialDetectionNetwork.setCoordinateSize(4)
+    spatialDetectionNetwork.setAnchors([10, 13, 16, 30, 33, 23, 30, 61, 62, 45, 59, 119, 116, 90, 156, 198, 373, 326] )
+    spatialDetectionNetwork.setAnchorMasks({ "side52": [0,1,2], "side26": [3,4,5], "side13": [6,7,8]})
+    spatialDetectionNetwork.setIouThreshold(0.5)
 
-camRgb.preview.link(spatialDetectionNetwork.input)
-if syncNN:
-    spatialDetectionNetwork.passthrough.link(xoutRgb.input)
-else:
-    camRgb.preview.link(xoutRgb.input)
+    # Linking
+    monoLeft.out.link(stereo.left)
+    monoRight.out.link(stereo.right)
 
-spatialDetectionNetwork.out.link(xoutNN.input)
+    camRgb.preview.link(spatialDetectionNetwork.input)
+    if syncNN:
+        spatialDetectionNetwork.passthrough.link(xoutRgb.input)
+    else:
+        camRgb.preview.link(xoutRgb.input)
 
-stereo.depth.link(spatialDetectionNetwork.inputDepth)
-spatialDetectionNetwork.passthroughDepth.link(xoutDepth.input)
-spatialDetectionNetwork.outNetwork.link(nnNetworkOut.input)
-sysLog.out.link(sysLogOut.input)
+    spatialDetectionNetwork.out.link(xoutNN.input)
+
+    stereo.depth.link(spatialDetectionNetwork.inputDepth)
+    spatialDetectionNetwork.passthroughDepth.link(xoutDepth.input)
+    spatialDetectionNetwork.outNetwork.link(nnNetworkOut.input)
+    sysLog.out.link(sysLogOut.input)
+    
+    return pipeline
+
+while True:
+    try:
+        # Initialize pipeline for camera
+        pipeline = initialize_camera()
+
+        # if device is available break while loop
+        with dai.Device(pipeline) as device:
+            break
+
+    except Exception as e: # If camera not connected try again
+        print("Failed to connect to camera:", e)
+        print("Retrying in 5 seconds...")
+        time.sleep(5)
 
 # MQTT Initialize
-import paho.mqtt.client as mqtt
 def onConnect(client, userdata, flags, rc):
     print('Connected to MQTT Broker')
 def onPublish(client, userdata, mid):
