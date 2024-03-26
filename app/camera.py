@@ -10,8 +10,9 @@ import platform # used to check if running on raspberry pi
 import paho.mqtt.client as mqtt
 import json
 
-nnBlobPath = str((Path(__file__).parent / Path('VIADFinal_V4_openvino_2022.1_6shave.blob')).resolve().absolute())
+#nnBlobPath = str((Path(__file__).parent / Path('VIADFinal_V4_openvino_2022.1_6shave.blob')).resolve().absolute())
 #nnBlobPath = str((Path(__file__).parent / Path('5n_500epoch.blob')).resolve().absolute())
+nnBlobPath = str((Path(__file__).parent / Path('VIADFinal_V4_openvino_2022.1_5shave.blob')).resolve().absolute())
 
 if not Path(nnBlobPath).exists():
     import sys
@@ -70,6 +71,7 @@ def initialize_camera():
 
     # Properties
     camRgb.setPreviewSize(416, 416)
+    #camRgb.setPreviewSize(640, 640)
     camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
     camRgb.setInterleaved(False)
     camRgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.BGR)
@@ -89,7 +91,7 @@ def initialize_camera():
     stereo.setSubpixel(True)
 
     spatialDetectionNetwork.setBlobPath(nnBlobPath)
-    spatialDetectionNetwork.setConfidenceThreshold(0.5)
+    spatialDetectionNetwork.setConfidenceThreshold(0.4) # --------------------Confidence Threshold 
     spatialDetectionNetwork.input.setBlocking(False)
     spatialDetectionNetwork.setBoundingBoxScaleFactor(0.5)
     spatialDetectionNetwork.setDepthLowerThreshold(100)
@@ -100,6 +102,7 @@ def initialize_camera():
     spatialDetectionNetwork.setCoordinateSize(4)
     spatialDetectionNetwork.setAnchors([10, 13, 16, 30, 33, 23, 30, 61, 62, 45, 59, 119, 116, 90, 156, 198, 373, 326] )
     spatialDetectionNetwork.setAnchorMasks({ "side52": [0,1,2], "side26": [3,4,5], "side13": [6,7,8]})
+    #spatialDetectionNetwork.setAnchorMasks({ "side80": [0,1,2], "side40": [3,4,5], "side20": [6,7,8]})
     spatialDetectionNetwork.setIouThreshold(0.5)
 
     # Linking
