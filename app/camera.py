@@ -142,7 +142,7 @@ while True:
         print("Failed to connect to camera:", e)
         print("Retrying in 5 seconds...")
         error_message = f"Failed to connect to camera: {e}\nRetrying in 5 seconds..."
-        client.publish('detections', error_message)
+        client.publish('tts', error_message)
         time.sleep(5)
 
 # Connect to device and start pipeline
