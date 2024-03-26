@@ -118,6 +118,17 @@ def initialize_camera():
     
     return pipeline
 
+# MQTT Initialize
+def onConnect(client, userdata, flags, rc):
+    print('Connected to MQTT Broker')
+def onPublish(client, userdata, mid):
+    print('Published MQTT message:', mid)
+
+client = mqtt.Client()
+client.on_connect = onConnect
+client.on_publish = onPublish
+client.connect('localhost')
+
 while True:
     try:
         # Initialize pipeline for camera
@@ -130,18 +141,9 @@ while True:
     except Exception as e: # If camera not connected try again
         print("Failed to connect to camera:", e)
         print("Retrying in 5 seconds...")
+        error_message = f"Failed to connect to camera: {e}\nRetrying in 5 seconds..."
+        client.publish('detections', error_message)
         time.sleep(5)
-
-# MQTT Initialize
-def onConnect(client, userdata, flags, rc):
-    print('Connected to MQTT Broker')
-def onPublish(client, userdata, mid):
-    print('Published MQTT message:', mid)
-
-client = mqtt.Client()
-client.on_connect = onConnect
-client.on_publish = onPublish
-client.connect('localhost')
 
 # Connect to device and start pipeline
 with dai.Device(pipeline) as device:
