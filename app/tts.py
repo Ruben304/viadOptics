@@ -28,38 +28,38 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
     messageJSON = json.loads(msg.payload.decode())
 
     # Compare the current message with the previous one
-    if messageJSON != previous_message:
-        print('Received message:', messageJSON)
-        previous_message = messageJSON  # Update the previous message with the new one
-        message_text = messageJSON.get("message", "")
-        message_text = message_text.replace("_", " ")
-        tts = gTTS(text=message_text, lang = 'en')
-        wav_file = "myText.wav"
-        tts.save(wav_file)
-        # Initialize pygame and mixer
-        pygame.init()
-        pygame.mixer.init()
 
-        client.publish('tts-done', json.dumps({"status": "busy"}))
+    print('Received message:', messageJSON)
+    previous_message = messageJSON  # Update the previous message with the new one
+    message_text = messageJSON.get("message", "")
+    message_text = message_text.replace("_", " ")
+    tts = gTTS(text=message_text, lang = 'en')
+    wav_file = "myText.wav"
+    tts.save(wav_file)
+    # Initialize pygame and mixer
+    pygame.init()
+    pygame.mixer.init()
 
-        # Load the WAV file as a sound object
-        sound = pygame.mixer.Sound(wav_file)
+    client.publish('tts-done', json.dumps({"status": "busy"}))
 
-        # Play the audio
-        sound.play()
+    # Load the WAV file as a sound object
+    sound = pygame.mixer.Sound(wav_file)
 
-        # Wait for the audio to finish playing
-        while pygame.mixer.get_busy():
-            pygame.time.Clock().tick(10)
+    # Play the audio
+    sound.play()
+
+    # Wait for the audio to finish playing
+    while pygame.mixer.get_busy():
+        pygame.time.Clock().tick(10)
 
         # alert the message is done
         client.publish('tts-done', json.dumps({"status": "free"}))
 
-        # Quit pygame
-        pygame.quit()
+    # Quit pygame
+    pygame.quit()
 
-        # Remove the temporary WAV file if needed
-        os.remove(wav_file)
+    # Remove the temporary WAV file if needed
+    os.remove(wav_file)
 
 delete_all_wav_files()
 

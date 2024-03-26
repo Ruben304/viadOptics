@@ -9,13 +9,15 @@ label_queue = []  # queue for labels while TTS playback
 last_msgDict = None  # stores last msg dictionary
 last_status = "free"  # status of the tts starts as free
 
-labelMap = ["bench",    "bicycle",    "branch",    "bus",    "bush",
-            "car",    "chair",    "crosswalk",    "door", "elevator",
-            "fire_hydrant",    "green_light",    "gun", "motorcycle",
-            "person",    "pothole",    "rat",    "red_light", "scooter",
-            "stairs",    "stop_sign",    "stop_walking_signal", "table",
-            "traffic_cone",    "train",    "tree",    "truck",
-            "umbrella",    "walking_man_signal",    "yellow_light"]
+labelMap= [ "bench", "bicycle", "branch", "bus", "bush",
+                    "car", "chair", "crosswalk", "door", "elevator",
+                    "emergency_exit_sign", "emergency_light", "fire_alarm",
+                    "fire_extinguisher", "fire_hydrant",  "green_light",
+                    "gun", "motorcycle", "person", "pothole", "rat",
+                    "red_light", "scooter", "stairs", "stop_sign",
+                    "stop_walking_signal", "table", "traffic_cone", "train",
+                    "tree", "truck", "umbrella", "walking_man_signal",
+                    "yellow_light"]
 labelDic = {} # Store dictionary of z-distance for each label
 for label in labelMap:
     labelDic[label] = {"count": 0, "total": []} # 'count' is total number of entries in total, 'total' stores distances

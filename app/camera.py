@@ -8,22 +8,25 @@ import numpy as np
 import time
 import platform # used to check if running on raspberry pi
 import paho.mqtt.client as mqtt
+import json
 
-#nnBlobPath = str((Path(__file__).parent / Path('YoloV5_Testing_V2.blob')).resolve().absolute())
-nnBlobPath = str((Path(__file__).parent / Path('5n_500epoch.blob')).resolve().absolute())
+nnBlobPath = str((Path(__file__).parent / Path('VIADFinal_V4_openvino_2022.1_6shave.blob')).resolve().absolute())
+#nnBlobPath = str((Path(__file__).parent / Path('5n_500epoch.blob')).resolve().absolute())
 
 if not Path(nnBlobPath).exists():
     import sys
     raise FileNotFoundError(f'Required file/s not found, please run "{sys.executable} install_requirements.py"')
 
 # Label Maps
-labelMap = ["bench",    "bicycle",    "branch",    "bus",    "bush",
-            "car",    "chair",    "crosswalk",    "door",    "elevator",
-            "fire_hydrant",    "green_light",    "gun",    "motorcycle",
-            "person",    "pothole",    "rat",    "red_light",    "scooter",
-            "stairs",    "stop_sign",    "stop_walking_signal",    "table",
-            "traffic_cone",    "train",    "tree",    "truck",
-            "umbrella", "walking_man_signal",    "yellow_light"]
+labelMap= [ "bench", "bicycle", "branch", "bus", "bush",
+                    "car", "chair", "crosswalk", "door", "elevator",
+                    "emergency_exit_sign", "emergency_light", "fire_alarm",
+                    "fire_extinguisher", "fire_hydrant",  "green_light",
+                    "gun", "motorcycle", "person", "pothole", "rat",
+                    "red_light", "scooter", "stairs", "stop_sign",
+                    "stop_walking_signal", "table", "traffic_cone", "train",
+                    "tree", "truck", "umbrella", "walking_man_signal",
+                    "yellow_light"]
 
 syncNN = True
 
@@ -93,7 +96,7 @@ def initialize_camera():
     spatialDetectionNetwork.setDepthUpperThreshold(5000)
 
     # Yolo specific parameters
-    spatialDetectionNetwork.setNumClasses(30) # ------------------------------change the number of classes based on label list
+    spatialDetectionNetwork.setNumClasses(34) # ------------------------------change the number of classes based on label list
     spatialDetectionNetwork.setCoordinateSize(4)
     spatialDetectionNetwork.setAnchors([10, 13, 16, 30, 33, 23, 30, 61, 62, 45, 59, 119, 116, 90, 156, 198, 373, 326] )
     spatialDetectionNetwork.setAnchorMasks({ "side52": [0,1,2], "side26": [3,4,5], "side13": [6,7,8]})
@@ -141,8 +144,7 @@ while True:
     except Exception as e: # If camera not connected try again
         print("Failed to connect to camera:", e)
         print("Retrying in 5 seconds...")
-        error_message = f"Failed to connect to camera: {e}\nRetrying in 5 seconds..."
-        client.publish('tts', error_message)
+        client.publish('tts', json.dumps({'message': f'Failed to connect to camera: {e}\nRetrying in 5 seconds...'}))
         time.sleep(5)
 
 # Connect to device and start pipeline
