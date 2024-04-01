@@ -102,7 +102,7 @@ def initialize_camera():
     spatialDetectionNetwork.setCoordinateSize(4)
     spatialDetectionNetwork.setAnchors([10, 13, 16, 30, 33, 23, 30, 61, 62, 45, 59, 119, 116, 90, 156, 198, 373, 326] )
     spatialDetectionNetwork.setAnchorMasks({ "side52": [0,1,2], "side26": [3,4,5], "side13": [6,7,8]})
-    spatialDetectionNetwork.setIouThreshold(0.5)
+    spatialDetectionNetwork.setIouThreshold(0.45) # --------------------------- NN confidence threshold
 
     # Linking
     monoLeft.out.link(stereo.left)
