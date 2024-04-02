@@ -1,7 +1,34 @@
+import RPi.GPIO as GPIO
+import time
 import paho.mqtt.client as mqtt
 import json
 
-previous_message = None  # Initialize a variable to store the previous message
+# Set GPIO mode to BCM (Broadcom SOC channel)
+GPIO.setmode(GPIO.BCM)
+
+# Define motor pins
+motor_pins = [14, 15, 18, 23]
+
+# Set PWM frequency (Hz)
+PWM_FREQUENCY = 1000
+
+# Initialize GPIO pins for PWM control and create PWM instances for each motor
+pwm_motors = []
+for pin in motor_pins:
+    GPIO.setup(pin, GPIO.OUT)
+    pwm = GPIO.PWM(pin, PWM_FREQUENCY)
+    pwm.start(0)  # Initialize with 0 intensity
+    pwm_motors.append(pwm)
+
+
+def adjust_motor_intensity(degree):
+    # map degree (-90 to 90) for motor intensity
+    for index, pwm_motor in enumerate(pwm_motors):
+        # Adjust the formula based on your specific requirements
+        distance = abs(degree - ((index - 1.5) * 60))  # Adjusted for -90 to 90 range
+        intensity = max(0, int((1 - distance / 180) * 100))  # Ensure intensity is not negative
+        pwm_motor.ChangeDutyCycle(intensity)
+
 
 def onConnect(client, userdata, flags, rc):
     print('Connected to MQTT broker')
@@ -11,21 +38,33 @@ def onFail(client, userdata, flags, rc):
     print('Failed to connect to MQTT broker')
 
 def onMessage(client, userdata, msg: mqtt.MQTTMessage):
-    global previous_message  # Use the global variable to store the previous message
     messageJSON = json.loads(msg.payload.decode())
-    if messageJSON != previous_message:
-        print('Received message:', messageJSON)
-        previous_message = messageJSON  # Update the previous message with the new one
-        degree = messageJSON.get("degree", "")
-        intensity = messageJSON.get("intensity", "")
-        print(f"\ndegree: {degree}\nintensity{intensity}\n")
+    print('Received message:', messageJSON)
+    degree_text = messageJSON.get("degree", 0)
 
+    try:
+        degree = int(degree_text)
+        if -90 <= degree <= 90:
+            adjust_motor_intensity(degree)
+        else:
+            print("Degree out of bounds. Please ensure it's between -90 and 90.")
 
-client = mqtt.Client()
-client.on_connect = onConnect
-client.on_connect_fail = onFail
-client.on_message = onMessage
+    except ValueError:
+        print("Invalid degree. Please ensure it's a number between -90 and 90.")
 
-client.connect('localhost')
+def cleanup():
+    # Clean up GPIO on exit
+    for pwm_motor in pwm_motors:
+        pwm_motor.stop()
+    GPIO.cleanup()
 
-client.loop_forever()
+try:
+    client = mqtt.Client()
+    client.on_connect = onConnect
+    client.on_message = onMessage
+
+    client.connect('localhost')
+    client.loop_forever()
+
+except KeyboardInterrupt:
+    cleanup()
