@@ -15,7 +15,7 @@ Our device harnesses the capabilities of LIDAR sensors and advanced machine lear
 ![cameraArch](images/cameraArch.png)
 
 ## Software Architecture 
-![UpdateArch](images/updateArch.png)
+![updateArch](images/updateArch.png)
 
 ## Hardware Architecture
 
