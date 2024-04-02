@@ -11,8 +11,6 @@ import paho.mqtt.client as mqtt
 import json
 import subprocess
 
-#nnBlobPath = str((Path(__file__).parent / Path('VIADFinal_V4_openvino_2022.1_6shave.blob')).resolve().absolute())
-#nnBlobPath = str((Path(__file__).parent / Path('5n_500epoch.blob')).resolve().absolute())
 nnBlobPath = str((Path(__file__).parent / Path('VIADFinal_V4_openvino_2022.1_5shave.blob')).resolve().absolute())
 
 if not Path(nnBlobPath).exists():
@@ -79,7 +77,6 @@ def initialize_camera():
 
     # Properties
     camRgb.setPreviewSize(416, 416)
-    #camRgb.setPreviewSize(640, 640)
     camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
     camRgb.setInterleaved(False)
     camRgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.BGR)

@@ -81,7 +81,6 @@ def process_label(msgDict, status, client):
     # prep the message
     if msgDict is None:
         return
-    
 
     label = msgDict.get('label', '').lower()
     xCord = msgDict.get('x')
@@ -104,11 +103,9 @@ def process_label(msgDict, status, client):
             labelDic[label]["total"].append(zCord/1000)
 
         # if first time seeing object OR moving average and z distance difference is greater than 2
-        #if math.fabs(sum(labelDic[label]["total"]) / labelDic[label]["count"] - math.ceil(zCord/1000)) > 2 or labelDic[label]["count"] == 1:
         if math.fabs(sum(labelDic[label]["total"]) / labelDic[label]["count"] - zCord/1000) > dist_check or labelDic[label]["count"] == 1:
             diff = math.fabs((zCord/1000) - labelDic[label]["last"])
             if not (diff < 1 or math.floor(zCord == 0)):
-            #if not zCord == 0:    
                 if status == "busy": # if tts is currently busy
                     label_queue.append(detection) # add to queue
                 else: # if not busy
@@ -117,9 +114,6 @@ def process_label(msgDict, status, client):
                     else: # if no queue then publish directly
                         publish_message(detection, client)
                 labelDic[label]["last"] = round(zCord/1000)
-
-       
-        
 
 
 def publish_message(detection, client):
@@ -143,9 +137,6 @@ def calculate_degree(xCord, zCord):
 
 # alerts and messages being sent out
 def alert(label, degree, zCord):
-    
-
-    #zMeters = math.ceil(zCord/1000)
     zMeters = round(zCord/1000)
 
     # make the messages shorter to its not that long for each message
