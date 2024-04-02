@@ -269,7 +269,8 @@ with dai.Device(pipeline) as device:
         #cv2.imshow("rgb", frame)
         
         # Show frame if not raspberry pi or if pi is connected to monitor
-        if not (platform.machine().startswith('arm') and platform.system() == 'Linux') or is_display_connected():
+        #if not (platform.machine().startswith('arm') and platform.system() == 'Linux') or is_display_connected():
+        if not (platform.machine().startswith('arm') and platform.system() == 'Linux'):
             cv2.imshow("rgb", frame)
 
         if cv2.waitKey(1) == ord('q'):
