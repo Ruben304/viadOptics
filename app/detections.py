@@ -85,7 +85,7 @@ def process_label(msgDict, status, client):
     # create object for the queue for easier publish message
     detection = {'label': label, 'degree': degree, 'intensity': intensity, 'message': message}
 
-    if confidence > 0.45: # activate only if confidence is greater than 0.6
+    if confidence is not None and confidence > 0.45: # activate only if confidence is greater than 0.6
         if labelDic[label]["count"] < mov_ave_count: # if current label's count is less than the moving count
             labelDic[label]["total"].append(math.ceil(zCord/1000)) # add rounded up meters to total
             labelDic[label]["count"] = labelDic[label]["count"] + 1 # increment count
