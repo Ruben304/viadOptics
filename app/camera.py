@@ -110,7 +110,7 @@ def initialize_camera():
     spatialDetectionNetwork.setCoordinateSize(4)
     spatialDetectionNetwork.setAnchors([10, 13, 16, 30, 33, 23, 30, 61, 62, 45, 59, 119, 116, 90, 156, 198, 373, 326] )
     spatialDetectionNetwork.setAnchorMasks({ "side52": [0,1,2], "side26": [3,4,5], "side13": [6,7,8]})
-    spatialDetectionNetwork.setIouThreshold(0.45) # --------------------------- NN confidence threshold
+    spatialDetectionNetwork.setIouThreshold(0.5) # --------------------------- NN confidence threshold
 
     # Linking
     monoLeft.out.link(stereo.left)
@@ -266,7 +266,7 @@ with dai.Device(pipeline) as device:
 
         cv2.putText(frame, "NN fps: {:.2f}".format(fps), (2, frame.shape[0] - 4), cv2.FONT_HERSHEY_TRIPLEX, 0.4, color)
         #cv2.imshow("depth", depthFrameColor)
-        #cv2.imshow("rgb", frame)
+        cv2.imshow("rgb", frame)
         
         # Show frame if not raspberry pi or if pi is connected to monitor
         #if not (platform.machine().startswith('arm') and platform.system() == 'Linux') or is_display_connected():

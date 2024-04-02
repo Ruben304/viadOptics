@@ -21,7 +21,7 @@ labelMap= [ "bench", "bicycle", "branch", "bus", "bush",
 labelDic = {} # Store dictionary of z-distance for each label
 for label in labelMap:
     labelDic[label] = {"count": 0, "total": [], "last": 0} # 'count' is total number of entries in total, 'total' stores distances
-mov_ave_count = 15 # initialize moving average count
+mov_ave_count = 100 # initialize moving average count
 dist_check = 1 # distance to check for moving average
 
 def onConnect(client, userdata, flags, rc):
@@ -77,6 +77,8 @@ def process_label(msgDict, status, client):
     # prep the message
     if msgDict is None:
         return
+    
+
     label = msgDict.get('label', '').lower()
     xCord = msgDict.get('x')
     zCord = msgDict.get('z')
@@ -87,19 +89,22 @@ def process_label(msgDict, status, client):
     # create object for the queue for easier publish message
     detection = {'label': label, 'degree': degree, 'intensity': intensity, 'message': message}
 
-    if confidence is not None and confidence > 0.45: # activate only if confidence is greater than 0.6
+    if confidence is not None and confidence > 0.5: # activate only if confidence is greater than 0.6
         if labelDic[label]["count"] < mov_ave_count: # if current label's count is less than the moving count
-            labelDic[label]["total"].append(math.ceil(zCord/1000)) # add rounded up meters to total
+            #labelDic[label]["total"].append(math.ceil(zCord/1000)) # add rounded up meters to total
+            labelDic[label]["total"].append(zCord/1000)
             labelDic[label]["count"] = labelDic[label]["count"] + 1 # increment count
         else: #if current label's count is equal to the moving average count
             labelDic[label]["total"].pop(0) # remove oldest z distance entry
-            labelDic[label]["total"].append(math.ceil(zCord/1000)) # add new z distance entry
+            #labelDic[label]["total"].append(math.ceil(zCord/1000)) # add new z distance entry
+            labelDic[label]["total"].append(zCord/1000)
 
         # if first time seeing object OR moving average and z distance difference is greater than 2
         #if math.fabs(sum(labelDic[label]["total"]) / labelDic[label]["count"] - math.ceil(zCord/1000)) > 2 or labelDic[label]["count"] == 1:
         if math.fabs(sum(labelDic[label]["total"]) / labelDic[label]["count"] - zCord/1000) > dist_check or labelDic[label]["count"] == 1:
             diff = math.fabs((zCord/1000) - labelDic[label]["last"])
-            if not (diff < 1 or zCord == 0):
+            if not (diff < 1 or math.floor(zCord == 0)):
+            #if not zCord == 0:    
                 if status == "busy": # if tts is currently busy
                     label_queue.append(detection) # add to queue
                 else: # if not busy
@@ -109,23 +114,8 @@ def process_label(msgDict, status, client):
                         publish_message(detection, client)
                 labelDic[label]["last"] = round(zCord/1000)
 
-        '''
-        if status == "busy":
-            # add to queue if it's not the same as the last announced label or if the queue is empty
-            if not label_queue or label_queue[-1]['label'] != label:
-                label_queue.append(detection)
-        else:  # if status is free, check the queue first
-            if label_queue:
-                # if there is something in queue then add first in queue to detect
-                # logic to make sure it is not a repeat is already done
-                next_detection = label_queue.pop(0)
-                publish_message(next_detection, client)
-                last_announced_label = next_detection['label']
-            elif last_announced_label != label:
-                # if queue is empty and label is new, publish immediately
-                publish_message(detection, client)
-                last_announced_label = label
-        '''
+       
+        
 
 
 def publish_message(detection, client):

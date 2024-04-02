@@ -7,6 +7,9 @@ import glob  # Used to find MP3 files in the folder
 
 previous_message = None  # Initialize a variable to store the previous message
 
+# Initialize pygame and mixer
+pygame.init()
+pygame.mixer.init()
 
 def delete_all_wav_files():
     wav_files = glob.glob("*.wav")
@@ -33,12 +36,18 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
     previous_message = messageJSON  # Update the previous message with the new one
     message_text = messageJSON.get("message", "")
     message_text = message_text.replace("_", " ")
+
+    # Double the speed of speech by adding punctuation
+    modified_message_text = ""
+    for char in message_text:
+        modified_message_text += char + "."  # Add punctuation to double the speed
+
     tts = gTTS(text=message_text, lang = 'en')
     wav_file = "myText.wav"
     tts.save(wav_file)
     # Initialize pygame and mixer
-    pygame.init()
-    pygame.mixer.init()
+    #pygame.init()
+    #pygame.mixer.init()
 
     client.publish('tts-done', json.dumps({"status": "busy"}))
 
@@ -56,14 +65,14 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
         client.publish('tts-done', json.dumps({"status": "free"}))
 
     # Quit pygame
-    pygame.quit()
+    #pygame.quit()
 
     # Remove the temporary WAV file if needed
     os.remove(wav_file)
 
 delete_all_wav_files()
 
-pygame.init()
+#pygame.init()
 
 client = mqtt.Client()
 client.on_connect = onConnect
@@ -73,3 +82,6 @@ client.on_message = onMessage
 client.connect('localhost')
 
 client.loop_forever()
+
+# Quit pygame
+pygame.quit()
