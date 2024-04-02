@@ -31,6 +31,9 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
     print('Received message:', messageJSON)
     previous_message = messageJSON  # Update the previous message with the new one
     message_text = messageJSON.get("message", "")
+    print(message_text)
+    if not isinstance(message_text, str):
+        message_text = message_text[0]
     message_text = message_text.replace("_", " ")
 
     # Double the speed of speech by adding punctuation
