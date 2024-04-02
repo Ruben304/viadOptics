@@ -9,6 +9,7 @@ import time
 import platform # used to check if running on raspberry pi
 import paho.mqtt.client as mqtt
 import json
+import subprocess
 
 #nnBlobPath = str((Path(__file__).parent / Path('VIADFinal_V4_openvino_2022.1_6shave.blob')).resolve().absolute())
 #nnBlobPath = str((Path(__file__).parent / Path('5n_500epoch.blob')).resolve().absolute())
@@ -43,6 +44,13 @@ def printSystemInformation(info):
     print(f"Cpu usage - Leon CSS: {info.leonCssCpuUsage.average * 100:.2f}%, Leon MSS: {info.leonMssCpuUsage.average * 100:.2f} %")
     print("----------------------------------------")
 
+def is_display_connected():
+    try:
+        result = subprocess.run(['vcgencmd', 'get_display_power'], capture_output=True, text=True)
+        return 'display_power=1' in result.stdout
+    except Exception as e:
+        print("Error checking display status:", e)
+        return False
 
 # Initialize camera and pipeline
 def initialize_camera():
@@ -260,8 +268,8 @@ with dai.Device(pipeline) as device:
         #cv2.imshow("depth", depthFrameColor)
         #cv2.imshow("rgb", frame)
         
-        # Show frame if not raspberry pi
-        if not (platform.machine().startswith('arm') and platform.system() == 'Linux'):
+        # Show frame if not raspberry pi or if pi is connected to monitor
+        if not (platform.machine().startswith('arm') and platform.system() == 'Linux') or is_display_connected():
             cv2.imshow("rgb", frame)
 
         if cv2.waitKey(1) == ord('q'):
