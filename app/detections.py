@@ -5,6 +5,7 @@ import math
 
 last_announced_label = None  # tracks the last announced label
 label_queue = []  # queue for labels while TTS playback
+haptic_queue = []
 
 last_msgDict = None  # stores last msg dictionary
 last_status = "free"  # status of the tts starts as free
@@ -18,6 +19,9 @@ labelMap= [ "bench", "bicycle", "branch", "bus", "bush",
                     "stop_walking_signal", "table", "traffic_cone", "train",
                     "tree", "truck", "umbrella", "walking_man_signal",
                     "yellow_light"]
+
+haptic_label = ["bus", "car", "gun", "motorcycle", "pothole", "rat", "stairs", "train"]
+
 labelDic = {} # Store dictionary of z-distance for each label
 for label in labelMap:
     labelDic[label] = {"count": 0, "total": [], "last": 0} # 'count' is total number of entries in total, 'total' stores distances
@@ -84,10 +88,10 @@ def process_label(msgDict, status, client):
     zCord = msgDict.get('z')
     confidence = msgDict.get('confidence')
     degree = calculate_degree(xCord, zCord)
-    message, intensity = alert(label, degree, zCord)
+    message = alert(label, degree, zCord)
 
     # create object for the queue for easier publish message
-    detection = {'label': label, 'degree': degree, 'intensity': intensity, 'message': message}
+    detection = {'label': label, 'degree': degree, 'message': message}
 
     if confidence is not None and confidence > 0.5: # activate only if confidence is greater than 0.6
         if labelDic[label]["count"] < mov_ave_count: # if current label's count is less than the moving count
@@ -119,8 +123,11 @@ def process_label(msgDict, status, client):
 
 
 def publish_message(detection, client):
+    global haptic_label
+
     # publish message with label info
-    client.publish('hpt', json.dumps({'degree': detection['degree'], 'intensity': detection['intensity']}))
+    if detection['label'] in haptic_label:
+        client.publish('hpt', json.dumps({'degree': detection['degree']}))
     client.publish('tts', json.dumps({'message': detection['message']}))
     print(f"Published: {detection['message']}")
 
@@ -136,15 +143,7 @@ def calculate_degree(xCord, zCord):
 
 # alerts and messages being sent out
 def alert(label, degree, zCord):
-
-    if zCord < 304:  # 1 foot
-        intensity = 100
-    elif 304 <= zCord < 609:  # 1 to 2 feet
-        intensity = 80
-    elif 609 <= zCord < 1219:  # 2 to 4 feet
-        intensity = 60
-    else:  # 4 or more
-        intensity = 0
+    
 
     #zMeters = math.ceil(zCord/1000)
     zMeters = round(zCord/1000)
@@ -152,21 +151,21 @@ def alert(label, degree, zCord):
     # make the messages shorter to its not that long for each message
     if degree < -60:
         if zMeters == 1:
-            message = f"{label} {zMeters} meter to your left"
+            message = f"{label} {zMeters} meter left"
         else:
-            message = f"{label} {zMeters} meters to your left"
+            message = f"{label} {zMeters} meters left"
     elif degree > 60:
         if zMeters == 1:
-            message = f"{label} {zMeters} meter to your right"
+            message = f"{label} {zMeters} meter right"
         else:
-            message = f"{label} {zMeters} meters to your right"
+            message = f"{label} {zMeters} meters right"
     else:
         if zMeters == 1:
             message = f"{label} {zMeters} meter ahead"
         else:
             message = f"{label} {zMeters} meters ahead"
 
-    return message, intensity
+    return message,
 
 
 client = mqtt.Client()
