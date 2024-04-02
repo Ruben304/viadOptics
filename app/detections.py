@@ -75,6 +75,8 @@ def process_label(msgDict, status, client):
 
     # add confidence interval here to ensure extra filter
     # prep the message
+    if msgDict is None:
+        return
     label = msgDict.get('label', '').lower()
     xCord = msgDict.get('x')
     zCord = msgDict.get('z')
