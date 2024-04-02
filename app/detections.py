@@ -140,12 +140,12 @@ def alert(label, degree, zCord):
     zMeters = round(zCord/1000)
     print(degree)
     # make the messages shorter to its not that long for each message
-    if degree < -0.60:
+    if degree < -20:
         if zMeters == 1:
             message = f"{label} {zMeters} meter left"
         else:
             message = f"{label} {zMeters} meters left"
-    elif degree > 0.60:
+    elif degree > 20:
         if zMeters == 1:
             message = f"{label} {zMeters} meter right"
         else:
