@@ -29,6 +29,13 @@ def adjust_motor_intensity(degree):
         intensity = max(0, int((1 - distance / 180) * 100))  # Ensure intensity is not negative
         pwm_motor.ChangeDutyCycle(intensity)
 
+    # Wait for 2 seconds
+    time.sleep(2)
+
+    # Turn off all motors after 2 seconds
+    for pwm_motor in pwm_motors:
+        pwm_motor.ChangeDutyCycle(0)
+
 
 def onConnect(client, userdata, flags, rc):
     print('Connected to MQTT broker')
