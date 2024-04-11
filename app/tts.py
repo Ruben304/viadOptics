@@ -1,3 +1,4 @@
+import logging
 import paho.mqtt.client as mqtt
 import json
 import pygame  # Used for audio output
@@ -7,6 +8,9 @@ import glob  # Used to find MP3 files in the folder
 
 previous_message = None  # Initialize a variable to store the previous message
 
+# Set up logging
+logging.basicConfig(filename='tts_logs.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 def delete_all_wav_files():
     wav_files = glob.glob("*.wav")
     for wav_file in wav_files:
@@ -14,12 +18,12 @@ def delete_all_wav_files():
 
 
 def onConnect(client, userdata, flags, rc):
-    print('Connected to MQTT broker')
+    logging.info('Connected to MQTT broker')
     client.subscribe('tts')
 
 
 def onFail(client, userdata, flags, rc):
-    print('Failed to connect to MQTT broker')
+    logging.error('Failed to connect to MQTT broker')
 
 
 def onMessage(client, userdata, msg: mqtt.MQTTMessage):
@@ -29,52 +33,55 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
     pygame.init()
     pygame.mixer.init()
 
-    # Compare the current message with the previous one
+    try:
+        # Compare the current message with the previous one
+        logging.info('Received message: %s', messageJSON)
+        previous_message = messageJSON  # Update the previous message with the new one
+        message_text = messageJSON.get("message", "")
+        logging.info('Message text: %s', message_text)
+        if not isinstance(message_text, str):
+            message_text = message_text[0]
+        message_text = message_text.replace("_", " ")
 
-    print('Received message:', messageJSON)
-    previous_message = messageJSON  # Update the previous message with the new one
-    message_text = messageJSON.get("message", "")
-    print(message_text)
-    if not isinstance(message_text, str):
-        message_text = message_text[0]
-    message_text = message_text.replace("_", " ")
+        # Double the speed of speech by adding punctuation
+        modified_message_text = ""
+        for char in message_text:
+            modified_message_text += char + "."  # Add punctuation to double the speed
 
-    # Double the speed of speech by adding punctuation
-    modified_message_text = ""
-    for char in message_text:
-        modified_message_text += char + "."  # Add punctuation to double the speed
+        tts = gTTS(text=message_text, lang='en')
+        wav_file = "myText.wav"
+        tts.save(wav_file)
 
-    tts = gTTS(text=message_text, lang = 'en')
-    wav_file = "myText.wav"
-    tts.save(wav_file)
+        client.publish('tts-done', json.dumps({"status": "busy"}))
 
+        # Load the WAV file as a sound object
+        sound = pygame.mixer.Sound(wav_file)
 
-    client.publish('tts-done', json.dumps({"status": "busy"}))
+        # Play the audio
+        sound.play()
 
-    # Load the WAV file as a sound object
-    sound = pygame.mixer.Sound(wav_file)
-
-    # Play the audio
-    sound.play()
-
-    # Wait for the audio to finish playing
-    while pygame.mixer.get_busy():
-        pygame.time.Clock().tick(10)
+        # Wait for the audio to finish playing
+        while pygame.mixer.get_busy():
+            pygame.time.Clock().tick(10)
 
         # alert the message is done
         client.publish('tts-done', json.dumps({"status": "free"}))
 
-    # Quit pygame
-    pygame.quit()
+    except Exception as e:
+        # Log any exceptions
+        logging.error('An error occurred: %s', e)
 
-    # Remove the temporary WAV file if needed
-    os.remove(wav_file)
+    finally:
+        # Quit pygame
+        pygame.quit()
+
+        # Remove the temporary WAV file if needed
+        os.remove(wav_file)
+
+# Set up logging for errors
+logging.basicConfig(filename='tts_logs.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 delete_all_wav_files()
-
-# Initialize pygame and mixer
-#pygame.init()
-#pygame.mixer.init()
 
 client = mqtt.Client()
 client.on_connect = onConnect
