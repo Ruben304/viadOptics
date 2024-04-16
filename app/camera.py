@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import logging
 from pathlib import Path
 import sys
 import cv2
@@ -33,6 +33,7 @@ syncNN = True
 # System Log Info
 def printSystemInformation(info):
     m = 1024 * 1024 # MiB
+    logging.info(f"Ddr used / total - {info.ddrMemoryUsage.used / m:.2f} / {info.ddrMemoryUsage.total / m:.2f} MiB")
     print(f"Ddr used / total - {info.ddrMemoryUsage.used / m:.2f} / {info.ddrMemoryUsage.total / m:.2f} MiB")
     print(f"Cmx used / total - {info.cmxMemoryUsage.used / m:.2f} / {info.cmxMemoryUsage.total / m:.2f} MiB")
     print(f"LeonCss heap used / total - {info.leonCssMemoryUsage.used / m:.2f} / {info.leonCssMemoryUsage.total / m:.2f} MiB")
@@ -149,6 +150,7 @@ while True:
             break
 
     except Exception as e: # If camera not connected try again
+        logging.error("Failed to connect to camera: %s", e)
         print("Failed to connect to camera:", e)
         print("Retrying in 5 seconds...")
         client.publish('tts', json.dumps({'message': f'Failed to connect to camera: {e}\nRetrying in 5 seconds...'}))
@@ -255,6 +257,7 @@ with dai.Device(pipeline) as device:
         numDetections = len(detectionMessages)
         if numDetections > 0:
             print(time.time(), 'There was', numDetections, 'detections in this message')
+            logging.info('There were %d detections in this message at time %s', numDetections, time.time())
             client.publish('detections', str(detectionMessages))
 
         if not sysInfo == None:

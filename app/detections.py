@@ -76,9 +76,11 @@ def onFail(client, userdata, flags, rc):
 def process_label(msgDict, status, client):
     global last_announced_label, label_queue, labelDic, mov_ave_count
 
-    # add confidence interval here to ensure extra filter
+
     # prep the message
     if msgDict is None:
+        # added for logging
+        logging.info("No message dictionary provided, skipping processing.")
         return
 
     label = msgDict.get('label', '').lower()
@@ -93,6 +95,7 @@ def process_label(msgDict, status, client):
 
     if confidence is not None and confidence > 0.5:  # activate only if confidence is greater than 0.6
         if labelDic[label]["count"] < mov_ave_count:  # if current label's count is less than the moving count
+            logging.debug(f"Processing label: {label} with confidence {confidence}")
             # labelDic[label]["total"].append(math.ceil(zCord/1000)) # add rounded up meters to total
             labelDic[label]["total"].append(zCord/1000)
             labelDic[label]["count"] = labelDic[label]["count"] + 1  # increment count
