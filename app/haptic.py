@@ -2,6 +2,11 @@ import RPi.GPIO as GPIO
 import time
 import paho.mqtt.client as mqtt
 import json
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
 
 # Set GPIO mode to BCM (Broadcom SOC channel)
 GPIO.setmode(GPIO.BCM)
@@ -24,7 +29,7 @@ for pin in motor_pins:
 def adjust_motor_intensity(degree):
     # map degree (-90 to 90) for motor intensity
     for index, pwm_motor in enumerate(pwm_motors):
-        # Adjust the formula based on your specific requirements
+        # Adjust the formula based on  requirements
         distance = abs(degree - ((index - 1.5) * 60))  # Adjusted for -90 to 90 range
         intensity = max(0, int((1 - distance / 180) * 100))  # Ensure intensity is not negative
         pwm_motor.ChangeDutyCycle(intensity)
@@ -54,9 +59,11 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
         if -90 <= degree <= 90:
             adjust_motor_intensity(degree)
         else:
+            logging.warning("Degree out of bounds: %d. Please ensure it's between -90 and 90.", degree)
             print("Degree out of bounds. Please ensure it's between -90 and 90.")
 
     except ValueError:
+        logging.error("Invalid degree value received: %s", degree_text)
         print("Invalid degree. Please ensure it's a number between -90 and 90.")
 
 def cleanup():
