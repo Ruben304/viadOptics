@@ -1,14 +1,26 @@
 import subprocess
 import threading
 import time
+import sys
+import os
 
 
 # Function to start a script
 def start_script(script_name):
-    return subprocess.Popen(
-        ["python3", script_name]
-    )
+    # Use the same Python executable that's running this script to ensure compatibility with the virtual environment
+    python_executable = sys.executable
+    script_path = script_name  # No need to specify a path if the script is in the same directory
+    log_file_path = os.path.join(os.path.dirname(__file__), "logs", f"{script_name}.log")
 
+    env = os.environ.copy()
+    with open(log_file_path, 'w') as log_file:
+        process = subprocess.Popen(
+            [python_executable, script_path],
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            env=env
+        )
+    return process
 
 # Function to monitor processes
 def monitor_processes(processes):
