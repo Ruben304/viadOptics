@@ -3,3 +3,6 @@ viadApp/*
 venv/*
 *.DS_STORE*
 .idea/*
+
+# Ignore log files in app
+app/*.log
