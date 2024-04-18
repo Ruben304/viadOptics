@@ -4,9 +4,8 @@ import paho.mqtt.client as mqtt
 import json
 import logging
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
+# Set up logging
+logging.basicConfig(filename='haptic_logs.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Set GPIO mode to BCM (Broadcom SOC channel)
 GPIO.setmode(GPIO.BCM)
@@ -43,15 +42,15 @@ def adjust_motor_intensity(degree):
 
 
 def onConnect(client, userdata, flags, rc):
-    print('Connected to MQTT broker')
+    logging.info('Connected to MQTT broker')
     client.subscribe('hpt')
 
 def onFail(client, userdata, flags, rc):
-    print('Failed to connect to MQTT broker')
+    logging.error('Failed to connect to MQTT broker')
 
 def onMessage(client, userdata, msg: mqtt.MQTTMessage):
     messageJSON = json.loads(msg.payload.decode())
-    print('Received message:', messageJSON)
+    logging.info('Received message: %s', messageJSON)
     degree_text = messageJSON.get("degree", 0)
 
     try:
@@ -60,11 +59,9 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
             adjust_motor_intensity(degree)
         else:
             logging.warning("Degree out of bounds: %d. Please ensure it's between -90 and 90.", degree)
-            print("Degree out of bounds. Please ensure it's between -90 and 90.")
 
     except ValueError:
         logging.error("Invalid degree value received: %s", degree_text)
-        print("Invalid degree. Please ensure it's a number between -90 and 90.")
 
 def cleanup():
     # Clean up GPIO on exit

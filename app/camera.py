@@ -11,6 +11,9 @@ import paho.mqtt.client as mqtt
 import json
 import subprocess
 
+# Set up logging
+logging.basicConfig(filename='camera_logs.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 nnBlobPath = str((Path(__file__).parent / Path('VIADFinal_V4_openvino_2022.1_5shave.blob')).resolve().absolute())
 
 if not Path(nnBlobPath).exists():
@@ -34,21 +37,20 @@ syncNN = True
 def printSystemInformation(info):
     m = 1024 * 1024 # MiB
     logging.info(f"Ddr used / total - {info.ddrMemoryUsage.used / m:.2f} / {info.ddrMemoryUsage.total / m:.2f} MiB")
-    print(f"Ddr used / total - {info.ddrMemoryUsage.used / m:.2f} / {info.ddrMemoryUsage.total / m:.2f} MiB")
-    print(f"Cmx used / total - {info.cmxMemoryUsage.used / m:.2f} / {info.cmxMemoryUsage.total / m:.2f} MiB")
-    print(f"LeonCss heap used / total - {info.leonCssMemoryUsage.used / m:.2f} / {info.leonCssMemoryUsage.total / m:.2f} MiB")
-    print(f"LeonMss heap used / total - {info.leonMssMemoryUsage.used / m:.2f} / {info.leonMssMemoryUsage.total / m:.2f} MiB")
+    logging.info(f"Cmx used / total - {info.cmxMemoryUsage.used / m:.2f} / {info.cmxMemoryUsage.total / m:.2f} MiB")
+    logging.info(f"LeonCss heap used / total - {info.leonCssMemoryUsage.used / m:.2f} / {info.leonCssMemoryUsage.total / m:.2f} MiB")
+    logging.info(f"LeonMss heap used / total - {info.leonMssMemoryUsage.used / m:.2f} / {info.leonMssMemoryUsage.total / m:.2f} MiB")
     t = info.chipTemperature
-    print(f"Chip temperature - average: {t.average:.2f}, css: {t.css:.2f}, mss: {t.mss:.2f}, upa: {t.upa:.2f}, dss: {t.dss:.2f}")
-    print(f"Cpu usage - Leon CSS: {info.leonCssCpuUsage.average * 100:.2f}%, Leon MSS: {info.leonMssCpuUsage.average * 100:.2f} %")
-    print("----------------------------------------")
+    logging.info(f"Chip temperature - average: {t.average:.2f}, css: {t.css:.2f}, mss: {t.mss:.2f}, upa: {t.upa:.2f}, dss: {t.dss:.2f}")
+    logging.info(f"Cpu usage - Leon CSS: {info.leonCssCpuUsage.average * 100:.2f}%, Leon MSS: {info.leonMssCpuUsage.average * 100:.2f} %")
+    logging.info("----------------------------------------")
 
 def is_display_connected():
     try:
         result = subprocess.run(['vcgencmd', 'get_display_power'], capture_output=True, text=True)
         return 'display_power=1' in result.stdout
     except Exception as e:
-        print("Error checking display status:", e)
+        logging.error("Error checking display status:", e)
         return False
 
 # Initialize camera and pipeline
@@ -129,11 +131,15 @@ def initialize_camera():
     
     return pipeline
 
+
 # MQTT Initialize
 def onConnect(client, userdata, flags, rc):
-    print('Connected to MQTT Broker')
+    logging.info('Connected to MQTT broker')
+
+
 def onPublish(client, userdata, mid):
-    print('Published MQTT message:', mid)
+    logging.info('Published MQTT message: %s', mid)
+
 
 client = mqtt.Client()
 client.on_connect = onConnect
@@ -151,8 +157,7 @@ while True:
 
     except Exception as e: # If camera not connected try again
         logging.error("Failed to connect to camera: %s", e)
-        print("Failed to connect to camera:", e)
-        print("Retrying in 5 seconds...")
+        logging.info("Retrying in 5 seconds...")
         client.publish('tts', json.dumps({'message': f'Failed to connect to camera: {e}\nRetrying in 5 seconds...'}))
         time.sleep(5)
 
@@ -256,7 +261,6 @@ with dai.Device(pipeline) as device:
         # Send MQTT Frame Message
         numDetections = len(detectionMessages)
         if numDetections > 0:
-            print(time.time(), 'There was', numDetections, 'detections in this message')
             logging.info('There were %d detections in this message at time %s', numDetections, time.time())
             client.publish('detections', str(detectionMessages))
 
@@ -266,7 +270,7 @@ with dai.Device(pipeline) as device:
 
         cv2.putText(frame, "NN fps: {:.2f}".format(fps), (2, frame.shape[0] - 4), cv2.FONT_HERSHEY_TRIPLEX, 0.4, color)
         #cv2.imshow("depth", depthFrameColor)
-        #cv2.imshow("rgb", frame)
+        cv2.imshow("rgb", frame)
         
         # Show frame if not raspberry pi or if pi is connected to monitor
         #if not (platform.machine().startswith('arm') and platform.system() == 'Linux') or is_display_connected():

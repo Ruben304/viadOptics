@@ -78,8 +78,6 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
         # Remove the temporary WAV file if needed
         os.remove(wav_file)
 
-# Set up logging for errors
-logging.basicConfig(filename='tts_logs.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 delete_all_wav_files()
 
