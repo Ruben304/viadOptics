@@ -23,8 +23,8 @@ def play_audio(mp3_file):
 
 
 # Text that you want to convert to speech
-my_text = "Hello World!"
-filename = "test.mp3"
+my_text = "bench 1 meter left"
+filename = "09_bench_1_left.mp3"
 
 # Use gTTS to generate a WAV file from the text
 tts = gTTS(text=my_text, lang='en')
@@ -43,4 +43,4 @@ tts.save(mp3_file)
 play_audio(mp3_file)
 
 # Remove the temporary WAV file if needed
-os.remove(mp3_file)
+#os.remove(mp3_file)
