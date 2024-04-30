@@ -4,22 +4,17 @@ import time
 import sys
 import os
 
-
 # Function to start a script
 def start_script(script_name):
-    # Use the same Python executable that's running this script to ensure compatibility with the virtual environment
     python_executable = sys.executable
-    script_path = script_name  # No need to specify a path if the script is in the same directory
-    log_file_path = os.path.join(os.path.dirname(__file__), "logs", f"{script_name}.log")
-
+    script_path = script_name
     env = os.environ.copy()
-    with open(log_file_path, 'w') as log_file:
-        process = subprocess.Popen(
-            [python_executable, script_path],
-            stdout=log_file,
-            stderr=subprocess.STDOUT,
-            env=env
-        )
+    process = subprocess.Popen(
+        [python_executable, script_path],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=env
+    )
     return process
 
 # Function to monitor processes
@@ -28,7 +23,7 @@ def monitor_processes(processes):
         while True:
             all_exited = True
             for proc in processes:
-                if proc.poll() is None:  # Process is still running
+                if proc.poll() is None:
                     all_exited = False
                 else:
                     print(f"Process {proc.args} has exited with code {proc.returncode}")
@@ -40,7 +35,6 @@ def monitor_processes(processes):
             time.sleep(1)
     except KeyboardInterrupt:
         print("Monitoring stopped by user.")
-
 
 # Main function to setup and monitor subprocesses
 def main():
@@ -58,7 +52,6 @@ def main():
     monitor_thread.start()
 
     monitor_thread.join()  # Wait for the monitoring thread to finish
-
 
 if __name__ == "__main__":
     main()
