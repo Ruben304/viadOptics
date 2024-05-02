@@ -34,16 +34,16 @@ labelMap= [ "bench", "bicycle", "branch", "bus", "bush",
 syncNN = True
 
 # System Log Info
-# def printSystemInformation(info):
-#     m = 1024 * 1024 # MiB
-#     logging.info(f"Ddr used / total - {info.ddrMemoryUsage.used / m:.2f} / {info.ddrMemoryUsage.total / m:.2f} MiB")
-#     logging.info(f"Cmx used / total - {info.cmxMemoryUsage.used / m:.2f} / {info.cmxMemoryUsage.total / m:.2f} MiB")
-#     logging.info(f"LeonCss heap used / total - {info.leonCssMemoryUsage.used / m:.2f} / {info.leonCssMemoryUsage.total / m:.2f} MiB")
-#     logging.info(f"LeonMss heap used / total - {info.leonMssMemoryUsage.used / m:.2f} / {info.leonMssMemoryUsage.total / m:.2f} MiB")
-#     t = info.chipTemperature
-#     logging.info(f"Chip temperature - average: {t.average:.2f}, css: {t.css:.2f}, mss: {t.mss:.2f}, upa: {t.upa:.2f}, dss: {t.dss:.2f}")
-#     logging.info(f"Cpu usage - Leon CSS: {info.leonCssCpuUsage.average * 100:.2f}%, Leon MSS: {info.leonMssCpuUsage.average * 100:.2f} %")
-#     logging.info("----------------------------------------")
+def printSystemInformation(info):
+    m = 1024 * 1024 # MiB
+    logging.info(f"Ddr used / total - {info.ddrMemoryUsage.used / m:.2f} / {info.ddrMemoryUsage.total / m:.2f} MiB")
+    logging.info(f"Cmx used / total - {info.cmxMemoryUsage.used / m:.2f} / {info.cmxMemoryUsage.total / m:.2f} MiB")
+    logging.info(f"LeonCss heap used / total - {info.leonCssMemoryUsage.used / m:.2f} / {info.leonCssMemoryUsage.total / m:.2f} MiB")
+    logging.info(f"LeonMss heap used / total - {info.leonMssMemoryUsage.used / m:.2f} / {info.leonMssMemoryUsage.total / m:.2f} MiB")
+    t = info.chipTemperature
+    logging.info(f"Chip temperature - average: {t.average:.2f}, css: {t.css:.2f}, mss: {t.mss:.2f}, upa: {t.upa:.2f}, dss: {t.dss:.2f}")
+    logging.info(f"Cpu usage - Leon CSS: {info.leonCssCpuUsage.average * 100:.2f}%, Leon MSS: {info.leonMssCpuUsage.average * 100:.2f} %")
+    logging.info("----------------------------------------")
 
 def is_display_connected():
     try:
@@ -64,15 +64,15 @@ def initialize_camera():
     monoLeft = pipeline.create(dai.node.MonoCamera)
     monoRight = pipeline.create(dai.node.MonoCamera)
     stereo = pipeline.create(dai.node.StereoDepth)
-    # sysLog = pipeline.create(dai.node.SystemLogger)
-    # sysLogOut = pipeline.create(dai.node.XLinkOut)
+    sysLog = pipeline.create(dai.node.SystemLogger)
+    sysLogOut = pipeline.create(dai.node.XLinkOut)
     nnNetworkOut = pipeline.create(dai.node.XLinkOut)
 
     xoutRgb = pipeline.create(dai.node.XLinkOut)
     xoutNN = pipeline.create(dai.node.XLinkOut)
     xoutDepth = pipeline.create(dai.node.XLinkOut)
 
-    # sysLogOut.setStreamName("sysinfo")
+    sysLogOut.setStreamName("sysinfo")
     xoutRgb.setStreamName("rgb")
     xoutNN.setStreamName("detections")
     xoutDepth.setStreamName("depth")
@@ -89,7 +89,7 @@ def initialize_camera():
     monoRight.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
     monoRight.setCamera("right")
 
-    # sysLog.setRate(1)  # 1 Hz
+    sysLog.setRate(1)  # 1 Hz
 
     # setting node configs
     stereo.setDefaultProfilePreset(dai.node.StereoDepth.PresetMode.HIGH_DENSITY)
@@ -127,7 +127,7 @@ def initialize_camera():
     stereo.depth.link(spatialDetectionNetwork.inputDepth)
     spatialDetectionNetwork.passthroughDepth.link(xoutDepth.input)
     spatialDetectionNetwork.outNetwork.link(nnNetworkOut.input)
-    # sysLog.out.link(sysLogOut.input)
+    sysLog.out.link(sysLogOut.input)
     
     return pipeline
 
@@ -146,135 +146,137 @@ client.on_connect = onConnect
 client.on_publish = onPublish
 client.connect('localhost')
 
-def main():
+while True:
+    try:
+        # Initialize pipeline for camera
+        pipeline = initialize_camera()
+
+        # if device is available break while loop
+        with dai.Device(pipeline) as device:
+            break
+
+    except Exception as e: # If camera not connected try again
+        logging.error("Failed to connect to camera: %s", e)
+        logging.info("Retrying in 5 seconds...")
+        client.publish('tts', json.dumps({'message': f'Failed to connect to camera: {e}\nRetrying in 5 seconds...'}))
+        time.sleep(5)
+
+# Connect to device and start pipeline
+with dai.Device(pipeline) as device:
+
+    # Output queues will be used to get the rgb frames and nn data from the outputs defined above
+    previewQueue = device.getOutputQueue(name="rgb", maxSize=4, blocking=False)
+    detectionNNQueue = device.getOutputQueue(name="detections", maxSize=4, blocking=False)
+    depthQueue = device.getOutputQueue(name="depth", maxSize=4, blocking=False)
+    networkQueue = device.getOutputQueue(name="nnNetwork", maxSize=4, blocking=False)
+    qSysInfo: dai.DataOutputQueue = device.getOutputQueue(name="sysinfo", maxSize=4, blocking=False)
+
+    startTime = time.monotonic()
+    counter = 0
+    fps = 0
+    color = (255, 255, 255)
+    printOutputLayersOnce = True
+
     while True:
-        try:
-            # Initialize pipeline for camera
-            pipeline = initialize_camera()
+        inPreview = previewQueue.get()
+        inDet = detectionNNQueue.get()
+        depth = depthQueue.get()
+        inNN = networkQueue.get()
+        sysInfo = qSysInfo.tryGet()
 
-            # if device is available break while loop
-            with dai.Device(pipeline) as device:
-                break
+        # if printOutputLayersOnce:
+        #     toPrint = 'Output layer names:'
+        #     for ten in inNN.getAllLayerNames():
+        #         toPrint = f'{toPrint} {ten},'
+        #     print(toPrint)
+        #     printOutputLayersOnce = False
 
-        except Exception as e: # If camera not connected try again
-            logging.error("Failed to connect to camera: %s", e)
-            logging.info("Retrying in 5 seconds...")
-            client.publish('tts', json.dumps({'message': f'Failed to connect to camera: {e}\nRetrying in 5 seconds...'}))
-            time.sleep(5)
+        frame = inPreview.getCvFrame()
+        depthFrame = depth.getFrame() # depthFrame values are in millimeters
 
-    # Connect to device and start pipeline
-    with dai.Device(pipeline) as device:
+        depth_downscaled = depthFrame[::4]
+        if np.all(depth_downscaled == 0):
+            min_depth = 0  # Set a default minimum depth value when all elements are zero
+        else:
+            min_depth = np.percentile(depth_downscaled[depth_downscaled != 0], 1)
+        max_depth = np.percentile(depth_downscaled, 99)
+        depthFrameColor = np.interp(depthFrame, (min_depth, max_depth), (0, 255)).astype(np.uint8)
+        depthFrameColor = cv2.applyColorMap(depthFrameColor, cv2.COLORMAP_HOT)
 
-        # Output queues will be used to get the rgb frames and nn data from the outputs defined above
-        previewQueue = device.getOutputQueue(name="rgb", maxSize=4, blocking=False)
-        detectionNNQueue = device.getOutputQueue(name="detections", maxSize=4, blocking=False)
-        depthQueue = device.getOutputQueue(name="depth", maxSize=4, blocking=False)
-        networkQueue = device.getOutputQueue(name="nnNetwork", maxSize=4, blocking=False)
-        # qSysInfo: dai.DataOutputQueue = device.getOutputQueue(name="sysinfo", maxSize=4, blocking=False)
+        counter+=1
+        current_time = time.monotonic()
+        if (current_time - startTime) > 1 :
+            fps = counter / (current_time - startTime)
+            counter = 0
+            startTime = current_time
 
-        startTime = time.monotonic()
-        counter = 0
-        fps = 0
-        color = (255, 255, 255)
-        printOutputLayersOnce = True
+        detections = inDet.detections
 
-        while True:
+        # If the frame is available, draw bounding boxes on it and show the frame
+        height = frame.shape[0]
+        width = frame.shape[1]
+        detectionMessages = []
+        for detection in detections:
+            # have to cast detection to SpatialImgDetection to access spatial coordinates
+            detection: dai.SpatialImgDetection = detection
+            thisDetection = {
+                'label': labelMap[detection.label],
+                'confidence': detection.confidence,
+                'x': int(detection.spatialCoordinates.x),  # Spatial X coordinate (mm)
+                'y': int(detection.spatialCoordinates.y),  # Spatial Y coordinate (mm)
+                'z': int(detection.spatialCoordinates.z)  # Spatial Z coordinate (mm)
+            }
+            # append the detection dictionary to messages
+            detectionMessages.append(str(thisDetection))
+
+            roiData = detection.boundingBoxMapping
+            roi = roiData.roi
+            roi = roi.denormalize(depthFrameColor.shape[1], depthFrameColor.shape[0])
+            topLeft = roi.topLeft()
+            bottomRight = roi.bottomRight()
+            xmin = int(topLeft.x)
+            ymin = int(topLeft.y)
+            xmax = int(bottomRight.x)
+            ymax = int(bottomRight.y)
+            cv2.rectangle(depthFrameColor, (xmin, ymin), (xmax, ymax), color, 1)
+
+            # Denormalize bounding box
+            x1 = int(detection.xmin * width)
+            x2 = int(detection.xmax * width)
+            y1 = int(detection.ymin * height)
+            y2 = int(detection.ymax * height)
+            # print(detection)
             try:
-                inPreview = previewQueue.get()
-                inDet = detectionNNQueue.get()
-                depth = depthQueue.get()
-                inNN = networkQueue.get()
-                # sysInfo = qSysInfo.tryGet()
+                label = labelMap[detection.label]
+            except:
+                label = detection.label
+            cv2.putText(frame, str(label), (x1 + 10, y1 + 20), cv2.FONT_HERSHEY_TRIPLEX, 0.5, (255, 255, 255))
+            cv2.putText(frame, "{:.2f}".format(detection.confidence*100), (x1 + 10, y1 + 35), cv2.FONT_HERSHEY_TRIPLEX, 0.5, (255, 255, 255))
+            cv2.putText(frame, f"X: {int(detection.spatialCoordinates.x)} mm", (x1 + 10, y1 + 50), cv2.FONT_HERSHEY_TRIPLEX, 0.5, (255, 255, 255))
+            cv2.putText(frame, f"Y: {int(detection.spatialCoordinates.y)} mm", (x1 + 10, y1 + 65), cv2.FONT_HERSHEY_TRIPLEX, 0.5, (255, 255, 255))
+            cv2.putText(frame, f"Z: {int(detection.spatialCoordinates.z)} mm", (x1 + 10, y1 + 80), cv2.FONT_HERSHEY_TRIPLEX, 0.5, (255, 255, 255))
 
-                # if printOutputLayersOnce:
-                #     toPrint = 'Output layer names:'
-                #     for ten in inNN.getAllLayerNames():
-                #         toPrint = f'{toPrint} {ten},'
-                #     print(toPrint)
-                #     printOutputLayersOnce = False
+            cv2.rectangle(frame, (x1, y1), (x2, y2), color, cv2.FONT_HERSHEY_SIMPLEX)
 
-                frame = inPreview.getCvFrame()
-                depthFrame = depth.getFrame() # depthFrame values are in millimeters
+        # Send MQTT Frame Message
+        numDetections = len(detectionMessages)
+        if numDetections > 0:
+            logging.info('There were %d detections in this message at time %s', numDetections, time.time())
+            client.publish('detections', str(detectionMessages))
 
-                depth_downscaled = depthFrame[::4]
-                if np.all(depth_downscaled == 0):
-                    min_depth = 0  # Set a default minimum depth value when all elements are zero
-                else:
-                    min_depth = np.percentile(depth_downscaled[depth_downscaled != 0], 1)
-                max_depth = np.percentile(depth_downscaled, 99)
-                depthFrameColor = np.interp(depthFrame, (min_depth, max_depth), (0, 255)).astype(np.uint8)
-                depthFrameColor = cv2.applyColorMap(depthFrameColor, cv2.COLORMAP_HOT)
-
-                counter+=1
-                current_time = time.monotonic()
-                if (current_time - startTime) > 1 :
-                    fps = counter / (current_time - startTime)
-                    counter = 0
-                    startTime = current_time
-
-                detections = inDet.detections
-
-                # If the frame is available, draw bounding boxes on it and show the frame
-                height = frame.shape[0]
-                width = frame.shape[1]
-                detectionMessages = []
-                for detection in detections:
-                    # have to cast detection to SpatialImgDetection to access spatial coordinates
-                    detection: dai.SpatialImgDetection = detection
-                    thisDetection = {
-                        'label': labelMap[detection.label],
-                        'confidence': detection.confidence,
-                        'x': int(detection.spatialCoordinates.x),  # Spatial X coordinate (mm)
-                        'y': int(detection.spatialCoordinates.y),  # Spatial Y coordinate (mm)
-                        'z': int(detection.spatialCoordinates.z)  # Spatial Z coordinate (mm)
-                    }
-                    # append the detection dictionary to messages
-                    detectionMessages.append(str(thisDetection))
-
-                    roiData = detection.boundingBoxMapping
-                    roi = roiData.roi
-                    roi = roi.denormalize(depthFrameColor.shape[1], depthFrameColor.shape[0])
-                    topLeft = roi.topLeft()
-                    bottomRight = roi.bottomRight()
-                    xmin = int(topLeft.x)
-                    ymin = int(topLeft.y)
-                    xmax = int(bottomRight.x)
-                    ymax = int(bottomRight.y)
-                    cv2.rectangle(depthFrameColor, (xmin, ymin), (xmax, ymax), color, 1)
-
-                    # Denormalize bounding box
-                    x1 = int(detection.xmin * width)
-                    x2 = int(detection.xmax * width)
-                    y1 = int(detection.ymin * height)
-                    y2 = int(detection.ymax * height)
-                    # print(detection)
-                    try:
-                        label = labelMap[detection.label]
-                    except:
-                        label = detection.label
-                    cv2.putText(frame, str(label), (x1 + 10, y1 + 20), cv2.FONT_HERSHEY_TRIPLEX, 0.5, (255, 255, 255))
-                    cv2.putText(frame, "{:.2f}".format(detection.confidence*100), (x1 + 10, y1 + 35), cv2.FONT_HERSHEY_TRIPLEX, 0.5, (255, 255, 255))
-                    cv2.putText(frame, f"X: {int(detection.spatialCoordinates.x)} mm", (x1 + 10, y1 + 50), cv2.FONT_HERSHEY_TRIPLEX, 0.5, (255, 255, 255))
-                    cv2.putText(frame, f"Y: {int(detection.spatialCoordinates.y)} mm", (x1 + 10, y1 + 65), cv2.FONT_HERSHEY_TRIPLEX, 0.5, (255, 255, 255))
-                    cv2.putText(frame, f"Z: {int(detection.spatialCoordinates.z)} mm", (x1 + 10, y1 + 80), cv2.FONT_HERSHEY_TRIPLEX, 0.5, (255, 255, 255))
-
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), color, cv2.FONT_HERSHEY_SIMPLEX)
-
-                # Send MQTT Frame Message
-                numDetections = len(detectionMessages)
-                if numDetections > 0:
-                    logging.info('There were %d detections in this message at time %s', numDetections, time.time())
-                    client.publish('detections', str(detectionMessages))
-
-                #if not sysInfo == None:
-                    #printSystemInformation(sysInfo)
+        if not sysInfo == None:
+            printSystemInformation(sysInfo)
 
 
-                cv2.putText(frame, "NN fps: {:.2f}".format(fps), (2, frame.shape[0] - 4), cv2.FONT_HERSHEY_TRIPLEX, 0.4, color)
-                #cv2.imshow("depth", depthFrameColor)
-                #cv2.imshow("rgb", frame)
-            except Exception as e:
-                logging.error("Error during processing: %s", e )
+        cv2.putText(frame, "NN fps: {:.2f}".format(fps), (2, frame.shape[0] - 4), cv2.FONT_HERSHEY_TRIPLEX, 0.4, color)
+        #cv2.imshow("depth", depthFrameColor)
+        #cv2.imshow("rgb", frame)
+        
+        # Show frame if not raspberry pi or if pi is connected to monitor
+        #if not (platform.machine().startswith('arm') and platform.system() == 'Linux') or is_display_connected():
+        #if not (platform.machine().startswith('arm') and platform.system() == 'Linux'):
+            #cv2.imshow("rgb", frame)
 
-if __name__=="__main__":
-    main()
+        if cv2.waitKey(1) == ord('q'):
+            # client.disconnect()
+            break
