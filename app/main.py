@@ -9,10 +9,11 @@ def start_script(script_name):
     python_executable = sys.executable
     script_path = script_name
     env = os.environ.copy()
+    log_file = open(f"{script_name}.log", "w")  # Open log file for writing
     process = subprocess.Popen(
         [python_executable, script_path],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=log_file,  # Redirect stdout to log file
+        stderr=log_file,  # Redirect stderr to log file
         env=env
     )
     return process
@@ -38,6 +39,7 @@ def monitor_processes(processes):
 
 # Main function to setup and monitor subprocesses
 def main():
+    
     scripts = [
         "camera.py",
         "detections.py",
