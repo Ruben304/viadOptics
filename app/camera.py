@@ -34,16 +34,16 @@ labelMap= [ "bench", "bicycle", "branch", "bus", "bush",
 syncNN = True
 
 # System Log Info
-def printSystemInformation(info):
-    m = 1024 * 1024 # MiB
-    logging.info(f"Ddr used / total - {info.ddrMemoryUsage.used / m:.2f} / {info.ddrMemoryUsage.total / m:.2f} MiB")
-    logging.info(f"Cmx used / total - {info.cmxMemoryUsage.used / m:.2f} / {info.cmxMemoryUsage.total / m:.2f} MiB")
-    logging.info(f"LeonCss heap used / total - {info.leonCssMemoryUsage.used / m:.2f} / {info.leonCssMemoryUsage.total / m:.2f} MiB")
-    logging.info(f"LeonMss heap used / total - {info.leonMssMemoryUsage.used / m:.2f} / {info.leonMssMemoryUsage.total / m:.2f} MiB")
-    t = info.chipTemperature
-    logging.info(f"Chip temperature - average: {t.average:.2f}, css: {t.css:.2f}, mss: {t.mss:.2f}, upa: {t.upa:.2f}, dss: {t.dss:.2f}")
-    logging.info(f"Cpu usage - Leon CSS: {info.leonCssCpuUsage.average * 100:.2f}%, Leon MSS: {info.leonMssCpuUsage.average * 100:.2f} %")
-    logging.info("----------------------------------------")
+# def printSystemInformation(info):
+#     m = 1024 * 1024 # MiB
+#     logging.info(f"Ddr used / total - {info.ddrMemoryUsage.used / m:.2f} / {info.ddrMemoryUsage.total / m:.2f} MiB")
+#     logging.info(f"Cmx used / total - {info.cmxMemoryUsage.used / m:.2f} / {info.cmxMemoryUsage.total / m:.2f} MiB")
+#     logging.info(f"LeonCss heap used / total - {info.leonCssMemoryUsage.used / m:.2f} / {info.leonCssMemoryUsage.total / m:.2f} MiB")
+#     logging.info(f"LeonMss heap used / total - {info.leonMssMemoryUsage.used / m:.2f} / {info.leonMssMemoryUsage.total / m:.2f} MiB")
+#     t = info.chipTemperature
+#     logging.info(f"Chip temperature - average: {t.average:.2f}, css: {t.css:.2f}, mss: {t.mss:.2f}, upa: {t.upa:.2f}, dss: {t.dss:.2f}")
+#     logging.info(f"Cpu usage - Leon CSS: {info.leonCssCpuUsage.average * 100:.2f}%, Leon MSS: {info.leonMssCpuUsage.average * 100:.2f} %")
+#     logging.info("----------------------------------------")
 
 def is_display_connected():
     try:
@@ -64,15 +64,15 @@ def initialize_camera():
     monoLeft = pipeline.create(dai.node.MonoCamera)
     monoRight = pipeline.create(dai.node.MonoCamera)
     stereo = pipeline.create(dai.node.StereoDepth)
-    sysLog = pipeline.create(dai.node.SystemLogger)
-    sysLogOut = pipeline.create(dai.node.XLinkOut)
+    # sysLog = pipeline.create(dai.node.SystemLogger)
+    # sysLogOut = pipeline.create(dai.node.XLinkOut)
     nnNetworkOut = pipeline.create(dai.node.XLinkOut)
 
     xoutRgb = pipeline.create(dai.node.XLinkOut)
     xoutNN = pipeline.create(dai.node.XLinkOut)
     xoutDepth = pipeline.create(dai.node.XLinkOut)
 
-    sysLogOut.setStreamName("sysinfo")
+    # sysLogOut.setStreamName("sysinfo")
     xoutRgb.setStreamName("rgb")
     xoutNN.setStreamName("detections")
     xoutDepth.setStreamName("depth")
@@ -89,7 +89,7 @@ def initialize_camera():
     monoRight.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
     monoRight.setCamera("right")
 
-    sysLog.setRate(1)  # 1 Hz
+    # sysLog.setRate(1)  # 1 Hz
 
     # setting node configs
     stereo.setDefaultProfilePreset(dai.node.StereoDepth.PresetMode.HIGH_DENSITY)
@@ -127,7 +127,7 @@ def initialize_camera():
     stereo.depth.link(spatialDetectionNetwork.inputDepth)
     spatialDetectionNetwork.passthroughDepth.link(xoutDepth.input)
     spatialDetectionNetwork.outNetwork.link(nnNetworkOut.input)
-    sysLog.out.link(sysLogOut.input)
+    # sysLog.out.link(sysLogOut.input)
     
     return pipeline
 
@@ -169,7 +169,7 @@ with dai.Device(pipeline) as device:
     detectionNNQueue = device.getOutputQueue(name="detections", maxSize=4, blocking=False)
     depthQueue = device.getOutputQueue(name="depth", maxSize=4, blocking=False)
     networkQueue = device.getOutputQueue(name="nnNetwork", maxSize=4, blocking=False)
-    qSysInfo: dai.DataOutputQueue = device.getOutputQueue(name="sysinfo", maxSize=4, blocking=False)
+    # qSysInfo: dai.DataOutputQueue = device.getOutputQueue(name="sysinfo", maxSize=4, blocking=False)
 
     startTime = time.monotonic()
     counter = 0
@@ -182,7 +182,7 @@ with dai.Device(pipeline) as device:
         inDet = detectionNNQueue.get()
         depth = depthQueue.get()
         inNN = networkQueue.get()
-        sysInfo = qSysInfo.tryGet()
+        # sysInfo = qSysInfo.tryGet()
 
         # if printOutputLayersOnce:
         #     toPrint = 'Output layer names:'
@@ -264,19 +264,10 @@ with dai.Device(pipeline) as device:
             logging.info('There were %d detections in this message at time %s', numDetections, time.time())
             client.publish('detections', str(detectionMessages))
 
-        if not sysInfo == None:
-            printSystemInformation(sysInfo)
+        #if not sysInfo == None:
+            #printSystemInformation(sysInfo)
 
 
         cv2.putText(frame, "NN fps: {:.2f}".format(fps), (2, frame.shape[0] - 4), cv2.FONT_HERSHEY_TRIPLEX, 0.4, color)
         #cv2.imshow("depth", depthFrameColor)
         #cv2.imshow("rgb", frame)
-        
-        # Show frame if not raspberry pi or if pi is connected to monitor
-        #if not (platform.machine().startswith('arm') and platform.system() == 'Linux') or is_display_connected():
-        #if not (platform.machine().startswith('arm') and platform.system() == 'Linux'):
-            #cv2.imshow("rgb", frame)
-
-        if cv2.waitKey(1) == ord('q'):
-            # client.disconnect()
-            break
