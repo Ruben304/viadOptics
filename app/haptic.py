@@ -11,7 +11,7 @@ logging.basicConfig(filename='haptic_logs.log', level=logging.INFO, format='%(as
 GPIO.setmode(GPIO.BCM)
 
 # Define motor pins
-motor_pins = [14, 15, 18, 23]
+motor_pins = [14, 15, 23, 24]
 
 # Set PWM frequency (Hz)
 PWM_FREQUENCY = 1000
