@@ -39,19 +39,14 @@ def monitor_processes(processes):
 
 # Main function to setup and monitor subprocesses
 def main():
-    '''
+
     scripts = [
         "camera.py",
         "detections.py",
         "haptic.py",
         "tts.py"
     ]
-    '''
-    scripts = [
-        "detections.py",
-        "haptic.py",
-        "tts.py"
-    ]
+
 
     processes = [start_script(script) for script in scripts]
 
