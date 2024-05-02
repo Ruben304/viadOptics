@@ -34,7 +34,6 @@ Our device harnesses the capabilities of LIDAR sensors and advanced machine lear
 - Microcontroller: Raspberry Pi Zero 2 W
 - Haptic Motor: Adafruit Vibrating Mini Motor Disc
 - Speakers: SM150508-7
-- Amplifier Module: Comimack TDA 1308 Stereo Headphone Amplifier
 - Mono Amplifier / Digital to Analog converter: Adafruit max98357 I2S
 - Power Supply: Xiaomi Mi Power Bank 3 Ultra Compact
 - Frames: Form labs tough 2000 resin
