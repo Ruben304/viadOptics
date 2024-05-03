@@ -3,6 +3,16 @@ import threading
 import time
 import sys
 import os
+import pygame
+pygame.init()
+pygame.mixer.init()
+
+def playSound(name):
+    sound = pygame.mixer.Sound('audio/' + name + '.wav')
+    sound.play()
+
+    while pygame.mixer.get_busy():
+        pygame.time.Clock().tick(10)
 
 # Function to start a script
 def start_script(script_name):
@@ -38,9 +48,12 @@ def main():
     try:
         scripts = ["camera.py", "detections.py", "haptic.py", "tts.py"]
         processes = [start_script(script) for script in scripts]
+        playSound('booted')
         monitor_processes(processes)
+        playSound('exiting')
     except Exception as e:
         print(e)
+        playSound('exiting')
         sys.exit(1)  # Exit with error code
 
 if __name__ == "__main__":
