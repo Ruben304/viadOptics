@@ -44,6 +44,9 @@ def onConnect(client, userdata, flags, rc):
     client.subscribe('detections')
     client.subscribe('tts-done')
 
+def onPublish(client, userdata, mid):
+    logging.info("MQTT Published Message with ID: " + str(mid))
+
 def onMessage(client, userdata, msg: mqtt.MQTTMessage):
     global last_msgDict, last_status
 
@@ -133,7 +136,6 @@ def publish_message(detection, client):
     if detection['label'] in haptic_label:
         client.publish('hpt', json.dumps({'degree': detection['degree']}))
     client.publish('tts', json.dumps({'message': detection['message']}))
-    logging.info("Published: %s", detection['message'])
 
 # to find degree in respect to the camera
 def calculate_degree(xCord, zCord):
@@ -169,6 +171,7 @@ client = mqtt.Client()
 client.on_connect = onConnect
 client.on_connect_fail = onFail
 client.on_message = onMessage
+client.on_publish = onPublish
 
 client.connect('localhost')
 client.loop_forever()
