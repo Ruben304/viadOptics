@@ -35,9 +35,9 @@ haptic_label = ["bus", "car", "gun", "motorcycle", "pothole", "rat", "stairs", "
 labelDic = {}  # Store dictionary of z-distance for each label
 for label in labelMap:
     labelDic[label] = {"count": 0, "total": [], "last": 0}  # 'count' is total number of entries in total, 'total' stores distances
-mov_ave_count = 20  # initialize moving average count
+mov_ave_count = 100  # initialize moving average count
 dist_check = 1  # distance to check for moving average
-confidenceThreshold = 0.4
+confidenceThreshold = 0.5
 
 def onConnect(client, userdata, flags, rc):
     logging.info('Connected to MQTT broker')
