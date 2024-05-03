@@ -7,6 +7,11 @@ import math
 # Set up logging
 logging.basicConfig(filename='detections_logs.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.INFO)
+console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+logging.getLogger().addHandler(console_handler)
+
 last_announced_label = None  # tracks the last announced label
 label_queue = []  # queue for labels while TTS playback
 haptic_queue = []
