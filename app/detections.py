@@ -6,7 +6,7 @@ import math
 import sys
 
 # Set up logging
-logging.basicConfig(filename='detections_logs.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(filename='detections_logs.log', level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 console_handler = logging.StreamHandler(sys.stdout)
 console_handler.setLevel(logging.INFO)
@@ -123,6 +123,8 @@ def process_label(msgDict, status, client):
                     else:  # if no queue then publish directly
                         publish_message(detection, client)
                 labelDic[label]["last"] = round(zCord/1000)
+    logging.debug('REJECTED: label was under c' + str(confidenceThreshold))
+    logging.debug('')
 
 def publish_message(detection, client):
     global haptic_label
