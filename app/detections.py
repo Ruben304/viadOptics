@@ -54,7 +54,6 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
             msgContent = msg.payload.decode()
             msgList = ast.literal_eval(msgContent)
             msgDict = ast.literal_eval(msgList[0])
-            logging.info('Received detection: %s', msgDict)
 
             # check if there is a new msg dictionary
             if msgDict != last_msgDict:
@@ -82,6 +81,7 @@ def onFail(client, userdata, flags, rc):
 def process_label(msgDict, status, client):
     global last_announced_label, label_queue, labelDic, mov_ave_count
 
+    logging.info('Processing label')
 
     # prep the message
     if msgDict is None:
@@ -143,7 +143,6 @@ def calculate_degree(xCord, zCord):
 # alerts and messages being sent out
 def alert(label, degree, zCord):
     zMeters = round(zCord/1000)
-    logging.info(degree)
     # make the messages shorter to its not that long for each message
     if degree < -20:
         if zMeters == 1:
