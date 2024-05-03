@@ -37,6 +37,7 @@ for label in labelMap:
     labelDic[label] = {"count": 0, "total": [], "last": 0}  # 'count' is total number of entries in total, 'total' stores distances
 mov_ave_count = 20  # initialize moving average count
 dist_check = 1  # distance to check for moving average
+confidenceThreshold = 0.4
 
 def onConnect(client, userdata, flags, rc):
     logging.info('Connected to MQTT broker')
@@ -99,7 +100,7 @@ def process_label(msgDict, status, client):
     # create object for the queue for easier publish message
     detection = {'label': label, 'degree': degree, 'message': message}
 
-    if confidence is not None and confidence > 0.5:  # activate only if confidence is greater than 0.6
+    if confidence is not None and confidence > confidenceThreshold:  # activate only if confidence is greater than 0.6
         if labelDic[label]["count"] < mov_ave_count:  # if current label's count is less than the moving count
             logging.debug(f"Processing label: {label} with confidence {confidence}")
             # labelDic[label]["total"].append(math.ceil(zCord/1000)) # add rounded up meters to total
