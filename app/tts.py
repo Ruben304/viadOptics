@@ -5,6 +5,7 @@ import pygame  # Used for audio output
 from gtts import gTTS  # Used for text-to-speech
 import os  # Used for getting json file location
 import glob  # Used to find MP3 files in the folder
+import sys
 
 previous_message = None  # Initialize a variable to store the previous message
 
@@ -68,6 +69,7 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
     except Exception as e:
         # Log any exceptions
         logging.error('An error occurred: %s', e)
+        sys.exit(1)
 
     finally:
         # Quit pygame
