@@ -49,7 +49,7 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
 
     try:
         topic = msg.topic  # topic of message being sent
-        logging.info("msg topic: %s", topic)
+        # logging.info("msg topic: %s", topic)
         if topic == 'detections':
             # getting content msg rdy for variable get
             msgContent = msg.payload.decode()
@@ -58,7 +58,7 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
 
             # check if there is a new msg dictionary
             if msgDict != last_msgDict:
-                logging.info('Received new detection: %s', msgDict)
+                # logging.info('Received new detection: %s', msgDict)
                 last_msgDict = msgDict
                 process_label(msgDict, last_status, client)
 
@@ -82,8 +82,6 @@ def onFail(client, userdata, flags, rc):
 def process_label(msgDict, status, client):
     global last_announced_label, label_queue, labelDic, mov_ave_count
 
-    logging.info('Processing label')
-
     # prep the message
     if msgDict is None:
         # added for logging
@@ -96,6 +94,8 @@ def process_label(msgDict, status, client):
     confidence = msgDict.get('confidence')
     degree = calculate_degree(xCord, zCord)
     message = alert(label, degree, zCord)
+
+    logging.info('Processing label: ' + label + ' - x' + zCord)
 
     # create object for the queue for easier publish message
     detection = {'label': label, 'degree': degree, 'message': message}
