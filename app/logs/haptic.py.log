@@ -1,4 +1,0 @@
-Traceback (most recent call last):
-  File "C:\Users\ruben\VIAD\viadOptics\app\haptic.py", line 1, in <module>
-    import RPi.GPIO as GPIO
-ModuleNotFoundError: No module named 'RPi'

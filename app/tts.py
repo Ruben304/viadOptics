@@ -30,8 +30,6 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
     global previous_message  # Use the global variable to store the previous message
     messageJSON = json.loads(msg.payload.decode())
 
-    pygame.init()
-    pygame.mixer.init()
 
     try:
         # Compare the current message with the previous one
@@ -78,7 +76,8 @@ def onMessage(client, userdata, msg: mqtt.MQTTMessage):
         # Remove the temporary WAV file if needed
         os.remove(wav_file)
 
-
+pygame.init()
+pygame.mixer.init()
 delete_all_wav_files()
 
 client = mqtt.Client()

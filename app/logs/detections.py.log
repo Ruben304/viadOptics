@@ -1,8 +1,0 @@
-Traceback (most recent call last):
-  File "C:\Users\ruben\VIAD\viadOptics\app\detections.py", line 166, in <module>
-    client.loop_forever()
-  File "C:\Users\ruben\VIAD\viadOptics\viad\lib\site-packages\paho\mqtt\client.py", line 1756, in loop_forever
-    rc = self._loop(timeout)
-  File "C:\Users\ruben\VIAD\viadOptics\viad\lib\site-packages\paho\mqtt\client.py", line 1150, in _loop
-    socklist = select.select(rlist, wlist, [], timeout)
-KeyboardInterrupt
