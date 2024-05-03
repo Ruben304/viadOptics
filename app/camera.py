@@ -9,6 +9,10 @@ import platform # used to check if running on raspberry pi
 import paho.mqtt.client as mqtt
 import json
 import subprocess
+import logging
+
+# Set up logging
+logging.basicConfig(filename='camera_logs.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 nnBlobPath = str((Path(__file__).parent / Path('VIADFinal_V4_openvino_2022.1_5shave.blob')).resolve().absolute())
 
@@ -28,18 +32,6 @@ labelMap= [ "bench", "bicycle", "branch", "bus", "bush",
                     "yellow_light"]
 
 syncNN = True
-
-# System Log Info
-def printSystemInformation(info):
-    m = 1024 * 1024 # MiB
-    print(f"Ddr used / total - {info.ddrMemoryUsage.used / m:.2f} / {info.ddrMemoryUsage.total / m:.2f} MiB")
-    print(f"Cmx used / total - {info.cmxMemoryUsage.used / m:.2f} / {info.cmxMemoryUsage.total / m:.2f} MiB")
-    print(f"LeonCss heap used / total - {info.leonCssMemoryUsage.used / m:.2f} / {info.leonCssMemoryUsage.total / m:.2f} MiB")
-    print(f"LeonMss heap used / total - {info.leonMssMemoryUsage.used / m:.2f} / {info.leonMssMemoryUsage.total / m:.2f} MiB")
-    t = info.chipTemperature
-    print(f"Chip temperature - average: {t.average:.2f}, css: {t.css:.2f}, mss: {t.mss:.2f}, upa: {t.upa:.2f}, dss: {t.dss:.2f}")
-    print(f"Cpu usage - Leon CSS: {info.leonCssCpuUsage.average * 100:.2f}%, Leon MSS: {info.leonMssCpuUsage.average * 100:.2f} %")
-    print("----------------------------------------")
 
 def is_display_connected():
     try:
@@ -129,7 +121,8 @@ def initialize_camera():
 
 # MQTT Initialize
 def onConnect(client, userdata, flags, rc):
-    print('Connected to MQTT Broker')
+    logging.info('Connected to MQTT Broker')
+
 def onPublish(client, userdata, mid):
     print('Published MQTT message:', mid)
 
@@ -148,8 +141,8 @@ while True:
             break
 
     except Exception as e: # If camera not connected try again
-        print("Failed to connect to camera:", e)
-        print("Retrying in 5 seconds...")
+        logging.error(f"Failed to connect to camera: {e}")
+        logging.info("Retrying in 5 seconds...")
         client.publish('tts', json.dumps({'message': f'Failed to connect to camera: {e}\nRetrying in 5 seconds...'}))
         time.sleep(5)
 
@@ -175,13 +168,6 @@ with dai.Device(pipeline) as device:
         depth = depthQueue.get()
         inNN = networkQueue.get()
         sysInfo = qSysInfo.tryGet()
-
-        # if printOutputLayersOnce:
-        #     toPrint = 'Output layer names:'
-        #     for ten in inNN.getAllLayerNames():
-        #         toPrint = f'{toPrint} {ten},'
-        #     print(toPrint)
-        #     printOutputLayersOnce = False
 
         frame = inPreview.getCvFrame()
         depthFrame = depth.getFrame() # depthFrame values are in millimeters
@@ -253,21 +239,15 @@ with dai.Device(pipeline) as device:
         # Send MQTT Frame Message
         numDetections = len(detectionMessages)
         if numDetections > 0:
-            print(time.time(), 'There was', numDetections, 'detections in this message')
+            logging.info(f"There were {len(detectionMessages)} detections")
             client.publish('detections', str(detectionMessages))
 
-        if not sysInfo == None:
-            printSystemInformation(sysInfo)
 
 
         cv2.putText(frame, "NN fps: {:.2f}".format(fps), (2, frame.shape[0] - 4), cv2.FONT_HERSHEY_TRIPLEX, 0.4, color)
         #cv2.imshow("depth", depthFrameColor)
         #cv2.imshow("rgb", frame)
         
-        # Show frame if not raspberry pi or if pi is connected to monitor
-        #if not (platform.machine().startswith('arm') and platform.system() == 'Linux') or is_display_connected():
-        #if not (platform.machine().startswith('arm') and platform.system() == 'Linux'):
-            #cv2.imshow("rgb", frame)
 
         if cv2.waitKey(1) == ord('q'):
             # client.disconnect()
