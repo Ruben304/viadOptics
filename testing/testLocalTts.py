@@ -13,5 +13,8 @@ else:
     thisEngine = 'Unknown'
 
 engine = pyttsx3.init(thisEngine)
-engine.say("I will speak this text")
+voices = engine.getProperty('voices')
+for voice in voices:
+   engine.setProperty('voice', voice.id)  # changes the voice
+   engine.say('The quick brown fox jumped over the lazy dog.')
 engine.runAndWait()
