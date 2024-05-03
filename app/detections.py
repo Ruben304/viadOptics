@@ -95,7 +95,7 @@ def process_label(msgDict, status, client):
     degree = calculate_degree(xCord, zCord)
     message = alert(label, degree, zCord)
 
-    logging.info('Processing label: ' + label + ' - x' + zCord)
+    logging.info('Processing label: ' + str(label) + ' - x' + str(zCord))
 
     # create object for the queue for easier publish message
     detection = {'label': label, 'degree': degree, 'message': message}
