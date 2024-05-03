@@ -12,7 +12,7 @@ import subprocess
 import logging
 
 # Set up logging
-logging.basicConfig(filename='camera_logs.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(filename='camera_logs.log', level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
 
 nnBlobPath = str((Path(__file__).parent / Path('VIADFinal_V4_openvino_2022.1_5shave.blob')).resolve().absolute())
 
