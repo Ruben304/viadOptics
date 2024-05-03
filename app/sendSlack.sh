@@ -15,17 +15,9 @@ CURRENT_TIME=$(date +"%Y-%m-%d %H:%M:%S")
 # Attribution information
 ATTRIBUTION="Message sent from a Raspberry Pi using a script created by OpenAI's GPT-3.5 model."
 
-# Check if device name argument is provided
-if [ -n "$1" ]; then
-  # Append device name to the message
-  MESSAGE_TEXT="Raspberry Pi Notification - $1"
-else
-  MESSAGE_TEXT="Raspberry Pi Notification"
-fi
-
 # Create JSON payload for Slack message
 PAYLOAD='{
-  "text": "'"$MESSAGE_TEXT"'",
+  "text": "Raspberry Pi Notification",
   "attachments": [
     {
       "fallback": "IP and Network Details",
