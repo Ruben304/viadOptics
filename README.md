@@ -12,7 +12,8 @@ VIAD aims to eliminate the high barrier of help needed for these visually impair
 Our device harnesses the capabilities of LIDAR sensors and advanced machine learning algorithms to enhance object recognition, enabling us to identify potential threats to the user. This innovative system is driven by a versatile microprocessor, which can be powered either by a rechargeable battery for a full day's use or by easily replaceable batteries for added convenience. Our vision includes developing a user-friendly notification system that utilizes haptic feedback and sound alert
 ### Videos about our device
 You can watch a video about our device below:
-<iframe width="560" height="315" src="https://www.youtube.com/embed/YAypW4CPITw" frameborder="0" allowfullscreen></iframe>
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/YAypW4CPITw/0.jpg)](http://www.youtube.com/watch?v=YAypW4CPITw "VIAD Optics")
+
 
 
 ## Renders of our device
