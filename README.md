@@ -19,8 +19,16 @@ Our device harnesses the capabilities of LIDAR sensors and advanced machine lear
 
 
 ## Renders of our device
-![VIAD_Glasses_E2 Rendering_FRONT](images/VIAD_Glasses_E2 Rendering_FRONT.jpg)
+### Front View
+![VIAD_Glasses_E2_Rendering_FRONT](images/VIAD_Glasses_E2_Rendering_FRONT.jpg)
+![FrontView](images/FrontView.png)
 
+### Left View
+![VIAD_Glasses_E2_Rendering_LEFT](images/VIAD_Glasses_E2_Rendering_LEFT.jpg)
+![RightView](images/RightView.png)
+### Isometric View
+![VIAD_Glasses_E2_Rendering_Isometric](images/VIAD_Glasses_E2_Rendering_Isometric.jpg)
+![LeftView](images/LeftView.png)
 
 ## Camera Architecture
 ![cameraArch](images/cameraArch.png)
